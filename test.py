@@ -21,7 +21,7 @@ def cloud_get(url, data):
     """docstring for cloud_get"""
     url_data = urllib.urlencode(data)
     full_url = url + '?' + url_data
-    print full_url
+    #print full_url
     #Enable Cookie
     opener = urllib2.build_opener(urllib2.HTTPCookieProcessor())
     response = opener.open(full_url)
@@ -73,7 +73,13 @@ def print_cloud_result(ret):
         return;
     ret_data = json.load(ret)
     for i in ret_data:
-        print i, ret_data[i]
+        if i == 'list':
+            list_data = ret_data[i]
+            for k in list_data:
+                for j in k:
+                    print j, k[j]
+        else:
+            print i, ret_data[i]
 
 download_url = "https://d.pcs.baidu.com/rest/2.0/pcs/file"
 download_param = {'method': 'download', 'access_token': access_token}
@@ -98,9 +104,42 @@ def mkdir_in_cloude(dir_name):
     ret.close();
 
 
+info_url = "https://pcs.baidu.com/rest/2.0/pcs/file"
+info_param = {'method': 'meta', 'access_token': access_token}
+
+def get_file_info_seperately(file_path):
+    """Get file or dir meta information"""
+    info_param['path'] = app_path + file_path
+    ret = cloud_get(info_url, info_param)
+    print_cloud_result(ret)
+    ret.close();
+
+def get_file_info_batch(file_path):
+    """Get file or dir meta information batch"""
+    info_param['path'] = app_path + file_path
+    ret = cloud_post(info_url, info_param)
+    print_cloud_result(ret)
+    ret.close();
+
+
+list_url = "https://pcs.baidu.com/rest/2.0/pcs/file"
+list_param = {'method': 'list', 'access_token': access_token}
+
+def list_file_in_cloud(dir_name, by = "", order = ""):
+    """List file in dir_name in cloud"""
+    list_param['path'] = app_path + dir_name
+    #list_param['by'] = by
+    #list_param['order'] = order
+    ret = cloud_get(list_url, list_param)
+    print_cloud_result(ret)
+    ret.close();
+
 
 if __name__ == '__main__':
-    get_cloud_info()
+    #get_cloud_info()
     #upload_file_to_cloud("test.txt")
     #download_file_from_cloud("test0.txt")
-    mkdir_in_cloude('test')
+    #mkdir_in_cloude('test')
+    get_file_info_seperately("test.txt");
+    #get_file_info_batch("test")
+    #list_file_in_cloud("")
