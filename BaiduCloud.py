@@ -54,12 +54,12 @@ post_url = "https://c.pcs.baidu.com/rest/2.0/pcs/file"
 
 upload_param = {'method': 'upload', 'ondup': 'newcopy', 'access_token': access_token}
 
-def upload_file_to_cloud(file_name):
+def upload_file_to_cloud(from_path, to_path):
     """docstring for upload_file_to_cloud"""
     register_openers()
-    upload_param['path'] = app_path + file_name
+    upload_param['path'] = app_path + to_path
     full_url = post_url + '?'  + urllib.urlencode(upload_param)
-    fp = open(file_name, "rb")
+    fp = open(from_path, "rb")
     datagen, headers = multipart_encode({'file': fp})
     req = urllib2.Request(full_url, datagen, headers)
     ret = urllib2.urlopen(req)
@@ -84,10 +84,10 @@ def print_cloud_result(ret):
 download_url = "https://d.pcs.baidu.com/rest/2.0/pcs/file"
 download_param = {'method': 'download', 'access_token': access_token}
 
-def download_file_from_cloud(file_name):
-    """docstring for download_file_from_cloud"""
-    out_fp = open(file_name, "wb")
-    download_param['path'] = app_path + file_name
+def download_file_from_cloud(from_path, to_path):
+    """Download from_path in cloud to to_path"""
+    out_fp = open(to_path, "wb")
+    download_param['path'] = app_path + from_path
     in_fp = cloud_get(download_url, download_param)
     out_fp.write(in_fp.read())
     in_fp.close()
@@ -96,7 +96,7 @@ def download_file_from_cloud(file_name):
 dir_url = "https://pcs.baidu.com/rest/2.0/pcs/file"
 dir_param = {'method': 'mkdir', 'access_token': access_token}
 
-def mkdir_in_cloude(dir_name):
+def mkdir_in_cloud(dir_name):
     """Make directory in Baidu YunPan"""
     dir_param['path'] = app_path + dir_name
     ret = cloud_post(dir_url, dir_param)
@@ -138,8 +138,8 @@ def list_file_in_cloud(dir_name, by = "", order = ""):
 if __name__ == '__main__':
     #get_cloud_info()
     #upload_file_to_cloud("test.txt")
-    #download_file_from_cloud("test0.txt")
-    #mkdir_in_cloude('test')
-    get_file_info_seperately("test.txt");
+    download_file_from_cloud("git1.jpg", "1.jpg")
+    #mkdir_in_cloud('test')
+    #get_file_info_seperately("git1.jpg");
     #get_file_info_batch("test")
     #list_file_in_cloud("")
