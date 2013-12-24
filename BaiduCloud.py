@@ -13,6 +13,7 @@ from poster.streaminghttp import register_openers
 from threading import Thread
 
 from BaiduCloudDefines import CloudMessage, msgQueue
+import BaiduCloudDefines
 
 info="https://pcs.baidu.com/rest/2.0/pcs/quota?method=info&access_token=3.b752352253e1bd4c3e77b34079af90ad.2592000.1381061912.2969659025-1297832"
 
@@ -140,25 +141,37 @@ def list_file_in_cloud(dir_name, by = "", order = ""):
     print_cloud_result(ret)
     ret.close();
 
+def test(filepath):
+    """docstring for test"""
+    print "[BaiduCloud TEST]: %s" % filepath
+
 class BaiduCloudActor(Thread):
     """This is a thread for Baidu Yun Pan"""
-    def __init__(self, name):
+    def __init__(self, name=None):
         super(BaiduCloudActor, self).__init__()
-        self.setName(name)
+        if name != None:
+            self.setName(name)
+
+        self.oper_table = {
+                BaiduCloudDefines.FILE_CREATE: lambda filepath : test(filepath)
+                }
 
     def run(self):
         """Thread main function"""
         i = 10
         print self.getName()
         while True:
+            item = CloudMessage()
             try:
-                item = CloudMessage()
-                item = msgQueue.get(True, 5)
-                print item.filepath + "\t" + str(item.action)
-            except KeyboardInterrupt:
-                exit(-1)
+                item = msgQueue.get(True)
+                print "[BaiduCloudActor]: "+ item.filepath + "\t" + str(item.action)
+                if item.action == OPER_STOP and item.filepath == self.getName():
+                    print "[BaiduCloudActor]: Stop this thread"
+                    break;
+                else:
+                    self.oper_table[item.action](item.filepath)
             except Queue.Empty, e:
-                print "Item empty" + str(e)
+                print "[BaiduCloudActor]: Item empty" + str(e)
 
 if __name__ == '__main__':
     #get_cloud_info()

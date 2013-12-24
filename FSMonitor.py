@@ -12,32 +12,32 @@ from pyinotify import WatchManager, Notifier, \
 from threading import Thread
 from BaiduCloudDefines import CloudMessage, msgQueue, \
         FILE_CREATE, FILE_DELETE, FILE_ADD, FILE_RENAME, \
-        FILE_MKDIR, FILE_MODIFY
+        FILE_MKDIR, FILE_MODIFY, OPER_STOP
 
 class EventHandler(ProcessEvent):
     """事件处理"""
     def process_IN_CREATE(self, event):
         path = os.path.join(event.path, event.name)
-        print   "Create file: %s "  %  path
+        print   "[FSMonitor:]Create file: %s "  %  path
         msgQueue.put(CloudMessage(FILE_CREATE, path))
 
     def process_IN_DELETE(self, event):
         path = os.path.join(event.path, event.name)
-        print   "Delete file: %s "  %  path
-        msgQueue.put(CloudMessage(FILE_CREATE, path))
+        print   "[FSMonitor:]Delete file: %s "  %  path
+        msgQueue.put(CloudMessage(FILE_DELETE, path))
 
     def process_IN_MODIFY(self, event):
         path = os.path.join(event.path, event.name)
-        print   "Modify file: %s "  %  path
-        msgQueue.put(CloudMessage(FILE_CREATE, path))
+        print   "[FSMonitor:]Modify file: %s "  %  path
+        msgQueue.put(CloudMessage(FILE_MODIFY, path))
 
     def process_IN_ATTRIB(self, event):
-        print   "ATTRIB file: %s "  %   os.path.join(event.path,event.name)
+        print   "[FSMonitor:]ATTRIB file: %s "  %   os.path.join(event.path,event.name)
 
     def process_IN_MOVED_TO(self, event):
         path = [os.path.join(event.path, event.name), event.src_pathname]
-        print   "MOVED TO file: %s  =>  %s " % (event.src_pathname , os.path.join(event.path,event.name))
-        msgQueue.put(CloudMessage(FILE_CREATE, path))
+        print   "[FSMonitor:]MOVED TO file: %s  =>  %s " % (event.src_pathname , os.path.join(event.path,event.name))
+        msgQueue.put(CloudMessage(FILE_RENAME, path))
 
 def FSMonitor(path='.'):
         wm = WatchManager()
@@ -57,7 +57,7 @@ def FSMonitor(path='.'):
 
 class FileSysMonitor(Thread):
     """File system monitor thread"""
-    def __init__(self, name = None):
+    def __init__(self, name=None):
         super(FileSysMonitor, self).__init__()
 
         if name != None:
@@ -66,7 +66,6 @@ class FileSysMonitor(Thread):
         self.wm = WatchManager()
         self.mask = IN_DELETE | IN_CREATE | IN_MODIFY | IN_ATTRIB | IN_MOVED_TO
         self.notifier = Notifier(self.wm, EventHandler())
-        self.addWatch(".")
 
     def addWatch(self, path):
         """Add watch for path"""
@@ -81,13 +80,17 @@ class FileSysMonitor(Thread):
         """Thread entry"""
         print self.getName()
         while True:
+            if self.notifier.check_events(500):
+                self.notifier.read_events()
+                self.notifier.process_events()
             try:
-               self.notifier.process_events()
-               if self.notifier.check_events():
-                   self.notifier.read_events()
-            except KeyboardInterrupt:
-                self.notifier.stop()
-                break
+                item = msgQueue.get(False)
+                if item.action == OPER_STOP and item.filepath == self.getName():
+                    self.stop()
+                    print "[FSMonitor]: Stop this thread"
+                    break;
+            except Queue.Empty:
+                pass
 
     def stop(self):
         """Stop watch"""

@@ -9,6 +9,8 @@ FILE_RENAME = 4
 FILE_MKDIR  = 5
 FILE_MODIFY = 6
 
+#Internal Operation
+OPER_STOP   = 7
 
 #Operation Result
 C_OK            =  0
