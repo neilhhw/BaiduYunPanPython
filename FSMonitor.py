@@ -10,9 +10,7 @@ from pyinotify import WatchManager, Notifier, \
         IN_ATTRIB, IN_MOVED_TO, IN_MOVED_FROM
 
 from threading import Thread
-from BaiduCloudDefines import CloudMessage, msgQueue, \
-        FILE_CREATE, FILE_DELETE, FILE_ADD, FILE_RENAME, \
-        FILE_MKDIR, FILE_MODIFY, OPER_STOP
+from MsgManager import *
 
 class EventHandler(ProcessEvent):
     """事件处理"""
@@ -39,6 +37,10 @@ class EventHandler(ProcessEvent):
         print   "[FSMonitor:]MOVED TO file: %s  =>  %s " % (event.src_pathname , os.path.join(event.path,event.name))
         msgQueue.put(CloudMessage(FILE_RENAME, path))
 
+    def process_IN_MOVED_FROM(self, event):
+        """docstring for process_IN_MOVED_FROM"""
+        pass
+
 def FSMonitor(path='.'):
         wm = WatchManager()
         mask = IN_DELETE | IN_CREATE | IN_MODIFY | IN_ATTRIB | IN_MOVED_TO | IN_MOVED_FROM
@@ -64,8 +66,9 @@ class FileSysMonitor(Thread):
             self.setName(name)
 
         self.wm = WatchManager()
-        self.mask = IN_DELETE | IN_CREATE | IN_MODIFY | IN_ATTRIB | IN_MOVED_TO
+        self.mask = IN_DELETE | IN_CREATE | IN_MODIFY | IN_ATTRIB | IN_MOVED_TO | IN_MOVED_FROM
         self.notifier = Notifier(self.wm, EventHandler())
+        self.msgQueue = Queue.Queue()
 
     def addWatch(self, path):
         """Add watch for path"""
@@ -80,7 +83,7 @@ class FileSysMonitor(Thread):
         """Thread entry"""
         print self.getName()
         while True:
-            if self.notifier.check_events(500):
+            if self.notifier.check_events(1000):
                 self.notifier.read_events()
                 self.notifier.process_events()
             try:
@@ -95,6 +98,10 @@ class FileSysMonitor(Thread):
     def stop(self):
         """Stop watch"""
         self.notifier.stop()
+
+    def getMsgQueue(self):
+        """Get current thread message queue"""
+        return self.msgQueue
 
 if __name__ == "__main__":
     fsThread = FileSysMonitor("Thread-FSMonitor")

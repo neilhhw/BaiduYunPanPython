@@ -151,9 +151,15 @@ class BaiduCloudActor(Thread):
         super(BaiduCloudActor, self).__init__()
         if name != None:
             self.setName(name)
+        self.msgQueue = Queue.Queue()
 
         self.oper_table = {
-                BaiduCloudDefines.FILE_CREATE: lambda filepath : test(filepath)
+                BaiduCloudDefines.FILE_CREATE: lambda filepath : test(filepath),
+                BaiduCloudDefines.FILE_MODIFY: lambda filepath : test(filepath),
+                BaiduCloudDefines.FILE_RENAME: lambda filepath : test(filepath),
+                BaiduCloudDefines.FILE_DELETE: lambda filepath : test(filepath),
+                BaiduCloudDefines.FILE_ADD: lambda filepath : test(filepath),
+                BaiduCloudDefines.FILE_MKDIR: lambda filepath : test(filepath),
                 }
 
     def run(self):
@@ -165,13 +171,16 @@ class BaiduCloudActor(Thread):
             try:
                 item = msgQueue.get(True)
                 print "[BaiduCloudActor]: "+ item.filepath + "\t" + str(item.action)
-                if item.action == OPER_STOP and item.filepath == self.getName():
+                if item.action == BaiduCloudDefines.OPER_STOP and item.filepath == self.getName():
                     print "[BaiduCloudActor]: Stop this thread"
                     break;
                 else:
                     self.oper_table[item.action](item.filepath)
             except Queue.Empty, e:
                 print "[BaiduCloudActor]: Item empty" + str(e)
+
+
+
 
 if __name__ == '__main__':
     #get_cloud_info()
