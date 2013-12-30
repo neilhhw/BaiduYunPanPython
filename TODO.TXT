@@ -1,0 +1,4 @@
+1. Add filter in FSMonitor
+2. Add plug-in framework
+3. Add GUI
+
