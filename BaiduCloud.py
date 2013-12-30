@@ -6,16 +6,16 @@ import urllib2
 import json
 import time
 import Queue
+import ConfigParser
+import webbrowser
+
 
 from poster.encode import multipart_encode
 from poster.streaminghttp import register_openers
 
 from threading import Thread
 
-from BaiduCloudDefines import CloudMessage, msgQueue
-import BaiduCloudDefines
-
-info="https://pcs.baidu.com/rest/2.0/pcs/quota?method=info&access_token=3.b752352253e1bd4c3e77b34079af90ad.2592000.1381061912.2969659025-1297832"
+from MsgManager import *
 
 access_token = "3.b752352253e1bd4c3e77b34079af90ad.2592000.1381061912.2969659025-1297832"
 app_path = "/apps/YunPan_Python/"
@@ -24,46 +24,15 @@ app_path = "/apps/YunPan_Python/"
 #TODO: Add common test json print out
 #TODO: Extract some functions
 
-def cloud_get(url, data):
-    """docstring for cloud_get"""
-    url_data = urllib.urlencode(data)
-    full_url = url + '?' + url_data
-    #print full_url
-    #Enable Cookie
-    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor())
-    response = opener.open(full_url)
-    return response
-
-def cloud_post(url, param):
-    """Common cloud post method"""
-    full_url = url + '?' + urllib.urlencode(param)
-    req = urllib2.Request(full_url)
-    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor())
-    try:
-        response = urllib2.urlopen(req)
-    except urllib2.HTTPError:
-        print 'Http Error'
-        return None
-    return response
-
-quota_url = "https://pcs.baidu.com/rest/2.0/pcs/quota"
-
-quota_data = {}
-quota_data['method'] = 'info'
-quota_data['access_token'] = access_token
-
-def get_cloud_info():
-    f = cloud_get(quota_url, quota_data)
-    print_cloud_result(f)
-    f.close()
-
 post_url = "https://c.pcs.baidu.com/rest/2.0/pcs/file"
 
 upload_param = {'method': 'upload', 'ondup': 'newcopy', 'access_token': access_token}
 
-def upload_file_to_cloud(from_path, to_path):
+def upload_file_to_cloud(from_path, to_path = None):
     """docstring for upload_file_to_cloud"""
     register_openers()
+    if to_path == None:
+        to_path = from_path
     upload_param['path'] = app_path + to_path
     full_url = post_url + '?'  + urllib.urlencode(upload_param)
     fp = open(from_path, "rb")
@@ -141,9 +110,95 @@ def list_file_in_cloud(dir_name, by = "", order = ""):
     print_cloud_result(ret)
     ret.close();
 
-def test(filepath):
-    """docstring for test"""
-    print "[BaiduCloud TEST]: %s" % filepath
+#===================================================================================================
+def cloud_get(url, data):
+    """docstring for cloud_get"""
+    url_data = urllib.urlencode(data)
+    full_url = url + '?' + url_data
+    print full_url
+    #Enable Cookie
+    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor())
+    response = opener.open(full_url)
+    return response
+
+def cloud_post(url, param):
+    """Common cloud post method"""
+    full_url = url + '?' + urllib.urlencode(param)
+    req = urllib2.Request(full_url)
+    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor())
+    try:
+        response = urllib2.urlopen(req)
+    except urllib2.HTTPError:
+        print 'Http Error'
+        return None
+    return response
+
+class BaiduCloudAPI():
+    """Baidu Cloud API class"""
+    def __init__(self, confName):
+        self.confName = confName
+        self.cf = ConfigParser.ConfigParser()
+        self.cf.read(self.confName)
+
+    def applyBaiduAccess(self):
+        """apply baidu access to netdisk"""
+        print "[API KEY]: %s=>%s" % ("api_key", self.cf.get("BaiduCloud", "api_key"))
+        print "[DEV CODE URL]: %s=>%s" % ("openapi_url", self.cf.get("BaiduCloud", "openapi_url"))
+        api_url = self.cf.get("BaiduCloud", "openapi_url") + "/device/code"
+        param = {"client_id": self.cf.get("BaiduCloud", "api_key"), "response_type": "device_code", "scope": "basic netdisk"}
+        ret_fp = cloud_get(api_url, param)
+        data = json.load(ret_fp)
+        webbrowser.open(data["verification_url"])
+        print "Please enter your user code %s into open web page" % data["user_code"]
+        print "Please note it will expires in %d s" % data["expires_in"]
+        ret_fp.close();
+
+        #Save devce code to ini
+        '''
+        data = {}
+        data["device_code"] = "41bea915b5dc81e2370d5b061e6a659c"
+        '''
+        self.cf.set("BaiduCloud", "dev_code", data["device_code"])
+        self.saveConf()
+
+    def applyAccessToken(self):
+        """Get access Token from Baidu API"""
+        api_url = self.cf.get("BaiduCloud", "openapi_url") + "/token"
+        print "API URL " + api_url
+        param = {"grant_type": "device_token", "code": self.cf.get("BaiduCloud", "dev_code"),
+                 "client_id": self.cf.get("BaiduCloud", "api_key"),
+                 "client_secret": self.cf.get("BaiduCloud", "secret_key")}
+        ret_fp = cloud_get(api_url, param)
+        data = json.load(ret_fp)
+        print data
+        ret_fp.close()
+
+        self.cf.set("BaiduCloud", "access_token", data["access_token"])
+        self.cf.set("BaiduCloud", "refresh_token", data["refresh_token"])
+        self.cf.set("BaiduCloud", "session_key", data["session_key"])
+        self.cf.set("BaiduCloud", "session_secret", data["session_secret"])
+        self.cf.set("BaiduCloud", "scope", data["scope"])
+
+        self.saveConf()
+
+
+    def saveConf(self):
+        """save conf to yaml file"""
+        self.cf.write(open(self.confName, "w"))
+
+    def getAccessToken(self):
+        """Get Baidu API access token"""
+        return self.cf.get("BaiduCloud", "access_token")
+
+    def getCloudInfo(self):
+        url = self.cf.get("BaiduCloud", "pcs_url") + "/quota"
+        param = {"method": "info", "access_token": self.cf.get("BaiduCloud", "access_token")}
+        f = cloud_get(url, param)
+        data = json.load(f)
+        f.close()
+        return data
+
+#===================================================================================================
 
 class BaiduCloudActor(Thread):
     """This is a thread for Baidu Yun Pan"""
@@ -153,33 +208,67 @@ class BaiduCloudActor(Thread):
             self.setName(name)
         self.msgQueue = Queue.Queue()
 
-        self.oper_table = {
-                BaiduCloudDefines.FILE_CREATE: lambda filepath : test(filepath),
-                BaiduCloudDefines.FILE_MODIFY: lambda filepath : test(filepath),
-                BaiduCloudDefines.FILE_RENAME: lambda filepath : test(filepath),
-                BaiduCloudDefines.FILE_DELETE: lambda filepath : test(filepath),
-                BaiduCloudDefines.FILE_ADD: lambda filepath : test(filepath),
-                BaiduCloudDefines.FILE_MKDIR: lambda filepath : test(filepath),
+        self.operTable = {
+                MSG_TYPE_T_FILE: lambda msg : self.handleFile(msg),
+                MSG_TYPE_T_OPER: lambda msg : self.handleOper(msg),
+                MSG_TYPE_T_RES : lambda msg : self.handleRes(msg),
+                MSG_TYPE_T_CONF: lambda msg : self.handleConf(msg)
                 }
+
+        self.bAPI = BaiduCloudAPI("conf.ini")
+        self.accessToken = self.bAPI.getAccessToken()
 
     def run(self):
         """Thread main function"""
-        i = 10
         print self.getName()
         while True:
-            item = CloudMessage()
             try:
-                item = msgQueue.get(True)
-                print "[BaiduCloudActor]: "+ item.filepath + "\t" + str(item.action)
-                if item.action == BaiduCloudDefines.OPER_STOP and item.filepath == self.getName():
-                    print "[BaiduCloudActor]: Stop this thread"
-                    break;
-                else:
-                    self.oper_table[item.action](item.filepath)
+                msg = self.msgQueue.get(True)
+                res = self.operTable[msg.mType](msg)
+                if res == -1:
+                    break
             except Queue.Empty, e:
                 print "[BaiduCloudActor]: Item empty" + str(e)
 
 
+    def regQ(self):
+        """regsiter message queue to manager"""
+        msgManager.regQ(MSG_UNIQUE_ID_T_BAIDU_ACTOR, self.msgQueue)
+
+    def replyMsg(self, msg, result):
+        """reply message with result"""
+        rMsgQueue = msgManager.findQ(msg.mUid)
+        rMsgQueue.put(CloudMessage(msg.mType, msg.mID, MSG_UNIQUE_ID_T_BAIDU_ACTOR, {0: result}))
+
+    def handleFile(self, msg):
+        """handle file operation"""
+        if msg.mID == MSG_ID_T_FILE_CREATE:
+            print "[%s]: Create file: %s" % (self.getName(), msg.mBody["path"])
+            try:
+                #upload_file_to_cloud(msg.mBody["path"])
+                print self.bAPI.getCloudInfo()
+            except urllib2.HTTPError, e:
+                print e
+            finally:
+                pass
+        return 0
+
+    def handleOper(self, msg):
+        """handle file operation"""
+        if msg.mID == MSG_ID_T_OPER_STOP:
+            self.replyMsg(msg, E_OK)
+            print "[%s] Stop" % self.getName()
+            return -1
+
+        return 0
+
+    def handleRes(self, msg):
+        """handle file operation"""
+        return 0
+
+    def handleConf(self, msg):
+        """handle file operation"""
+        return 0
 
 
 if __name__ == '__main__':
@@ -190,9 +279,8 @@ if __name__ == '__main__':
     #get_file_info_seperately("git1.jpg");
     #get_file_info_batch("test")
     #list_file_in_cloud("")
-    item = CloudMessage(1, "/home/neilhhw/Codes")
+    #b = BaiduCloudAPI("conf.ini")
+    #b.applyBaiduAccess()
+    #b.applyAccessToken()
+    pass
 
-    msgQueue.put(item)
-    b = BaiduCloudActor("Thread-Baidu")
-    print "Start BaiduCloudActor"
-    b.start()

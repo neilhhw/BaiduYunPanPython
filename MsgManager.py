@@ -23,13 +23,18 @@ MSG_TYPE_T_OPER = 2
 MSG_TYPE_T_RES  = 3
 MSG_TYPE_T_CONF = 4
 
+#Message Unique ID
+MSG_UNIQUE_ID_T_MAIN            = 0
+MSG_UNIQUE_ID_T_BAIDU_ACTOR     = 1
+MSG_UNIQUE_ID_T_FS_MONITOR      = 2
+
 class CloudMessage():
     """message type for cloud"""
-    def __init__(self, mType = None, mID = None, mTid, mBody = {}):
+    def __init__(self, mType = None, mID = None, mUid = None, mBody = {}):
         self.mType = mType
         self.mID = mID
         self.mBody = mBody
-        self.mTid = mTid
+        self.mUid = mUid
 
 
 class MsgManager():
@@ -45,4 +50,4 @@ class MsgManager():
         """find msg queue"""
         return self.msgTable[msgUniID]
 
-msgManager = MsgManager.MsgManager()
+msgManager = MsgManager()

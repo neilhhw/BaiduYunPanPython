@@ -13,49 +13,37 @@ from threading import Thread
 from MsgManager import *
 
 class EventHandler(ProcessEvent):
+    def my_init(self, **kargs):
+        """according to doc"""
+        self.msgQueue = kargs["queue"]
+
     """事件处理"""
     def process_IN_CREATE(self, event):
         path = os.path.join(event.path, event.name)
-        print   "[FSMonitor:]Create file: %s "  %  path
-        msgQueue.put(CloudMessage(FILE_CREATE, path))
+        print   "[FSMonitor]: Create file: %s "  %  path
+        self.msgQueue.put(CloudMessage(MSG_TYPE_T_FILE, MSG_ID_T_FILE_CREATE, MSG_UNIQUE_ID_T_FS_MONITOR, {"path": path}))
 
     def process_IN_DELETE(self, event):
         path = os.path.join(event.path, event.name)
-        print   "[FSMonitor:]Delete file: %s "  %  path
-        msgQueue.put(CloudMessage(FILE_DELETE, path))
+        print   "[FSMonitor]: Delete file: %s "  %  path
+        self.msgQueue.put(CloudMessage(MSG_TYPE_T_FILE, MSG_ID_T_FILE_DELETE, MSG_UNIQUE_ID_T_FS_MONITOR, {"path": path}))
 
     def process_IN_MODIFY(self, event):
         path = os.path.join(event.path, event.name)
-        print   "[FSMonitor:]Modify file: %s "  %  path
-        msgQueue.put(CloudMessage(FILE_MODIFY, path))
+        print   "[FSMonitor]: Modify file: %s "  %  path
+        self.msgQueue.put(CloudMessage(MSG_TYPE_T_FILE, MSG_ID_T_FILE_MODIFY, MSG_UNIQUE_ID_T_FS_MONITOR, {"path": path}))
 
     def process_IN_ATTRIB(self, event):
-        print   "[FSMonitor:]ATTRIB file: %s "  %   os.path.join(event.path,event.name)
+        print   "[FSMonitor]: ATTRIB file: %s "  %   os.path.join(event.path,event.name)
 
     def process_IN_MOVED_TO(self, event):
-        path = [os.path.join(event.path, event.name), event.src_pathname]
-        print   "[FSMonitor:]MOVED TO file: %s  =>  %s " % (event.src_pathname , os.path.join(event.path,event.name))
-        msgQueue.put(CloudMessage(FILE_RENAME, path))
+        print   "[FSMonitor]: MOVED TO file: %s  =>  %s " % (event.src_pathname , os.path.join(event.path,event.name))
+        self.msgQueue.put(CloudMessage(MSG_TYPE_T_FILE, MSG_ID_T_FILE_RENAME, MSG_UNIQUE_ID_T_FS_MONITOR,
+                                        {"src": event.src_pathname, "dest": event.path}))
 
     def process_IN_MOVED_FROM(self, event):
         """docstring for process_IN_MOVED_FROM"""
         pass
-
-def FSMonitor(path='.'):
-        wm = WatchManager()
-        mask = IN_DELETE | IN_CREATE | IN_MODIFY | IN_ATTRIB | IN_MOVED_TO | IN_MOVED_FROM
-        notifier = Notifier(wm, EventHandler())
-        wm.add_watch(path, mask,auto_add=True,rec=True)
-        wm.add_watch('/home/neilhhw', mask,auto_add=True,rec=True)
-        print 'now starting monitor %s'%(path)
-        while True:
-            try:
-               notifier.process_events()
-               if notifier.check_events():
-                   notifier.read_events()
-            except KeyboardInterrupt:
-                notifier.stop()
-                break
 
 class FileSysMonitor(Thread):
     """File system monitor thread"""
@@ -65,10 +53,9 @@ class FileSysMonitor(Thread):
         if name != None:
             self.setName(name)
 
+        self.msgQueue = Queue.Queue()
         self.wm = WatchManager()
         self.mask = IN_DELETE | IN_CREATE | IN_MODIFY | IN_ATTRIB | IN_MOVED_TO | IN_MOVED_FROM
-        self.notifier = Notifier(self.wm, EventHandler())
-        self.msgQueue = Queue.Queue()
 
     def addWatch(self, path):
         """Add watch for path"""
@@ -82,18 +69,30 @@ class FileSysMonitor(Thread):
     def run(self):
         """Thread entry"""
         print self.getName()
+        self.bActorMsgQueue = msgManager.findQ(MSG_UNIQUE_ID_T_BAIDU_ACTOR)
+        self.notifier = Notifier(self.wm, EventHandler(None, queue = self.bActorMsgQueue))
+
         while True:
             if self.notifier.check_events(1000):
                 self.notifier.read_events()
                 self.notifier.process_events()
             try:
-                item = msgQueue.get(False)
-                if item.action == OPER_STOP and item.filepath == self.getName():
-                    self.stop()
-                    print "[FSMonitor]: Stop this thread"
-                    break;
+                msg = self.msgQueue.get(False)
+                if msg.mType == MSG_TYPE_T_OPER:
+                    if msg.mID == MSG_ID_T_OPER_STOP:
+                        print "[%s]: Stop" % self.getName()
+                        self.replyMsg(msg, E_OK)
+                        self.stop()
+                        break
+                else:
+                    print "[FSMonitor]: Not accept other type 0x%X message:" % msg.mType
             except Queue.Empty:
                 pass
+
+    def replyMsg(self, msg, result):
+        """reply message with result"""
+        rMsgQueue = msgManager.findQ(msg.mUid)
+        rMsgQueue.put(CloudMessage(msg.mType, msg.mID, MSG_UNIQUE_ID_T_FS_MONITOR, {0: result}))
 
     def stop(self):
         """Stop watch"""
@@ -102,6 +101,10 @@ class FileSysMonitor(Thread):
     def getMsgQueue(self):
         """Get current thread message queue"""
         return self.msgQueue
+
+    def regQ(self):
+        """Register its message queue to manager"""
+        msgManager.regQ(MSG_UNIQUE_ID_T_FS_MONITOR, self.msgQueue)
 
 if __name__ == "__main__":
     fsThread = FileSysMonitor("Thread-FSMonitor")
