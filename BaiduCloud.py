@@ -17,9 +17,6 @@ from threading import Thread
 
 from MsgManager import *
 
-access_token = "3.b752352253e1bd4c3e77b34079af90ad.2592000.1381061912.2969659025-1297832"
-app_path = "/apps/YunPan_Python/"
-
 #TODO: Add try, catch method
 #TODO: Add common test json print out
 #TODO: Extract some functions
@@ -135,6 +132,7 @@ class BaiduCloudAPI():
         self.confName = confName
         self.cf = ConfigParser.ConfigParser()
         self.cf.read(self.confName)
+        register_openers()
 
     def applyBaiduAccess(self):
         """apply baidu access to netdisk"""
@@ -202,7 +200,6 @@ class BaiduCloudAPI():
         param['path'] = self.cf.get("BaiduCloud", "app_path") + "/" + to_path
         url = self.cf.get("BaiduCloud", "upload_url") + '?'  + urllib.urlencode(param)
         fp = open(from_path)
-        register_openers()
         datagen, headers = multipart_encode({'file': fp})
         #print datagen, headers
         headers['User-Agent'] = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
