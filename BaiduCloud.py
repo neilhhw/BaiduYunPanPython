@@ -17,9 +17,6 @@ from threading import Thread
 
 from MsgManager import *
 
-access_token = "3.b752352253e1bd4c3e77b34079af90ad.2592000.1381061912.2969659025-1297832"
-app_path = "/apps/YunPan_Python/"
-
 #TODO: Add try, catch method
 #TODO: Add common test json print out
 #TODO: Extract some functions
@@ -126,11 +123,7 @@ def cloud_post(url, param):
     full_url = url + '?' + urllib.urlencode(param)
     req = urllib2.Request(full_url)
     opener = urllib2.build_opener(urllib2.HTTPCookieProcessor())
-    try:
-        response = urllib2.urlopen(req)
-    except urllib2.HTTPError:
-        print 'Http Error'
-        return None
+    response = urllib2.urlopen(req)
     return response
 
 class BaiduCloudAPI():
@@ -139,6 +132,7 @@ class BaiduCloudAPI():
         self.confName = confName
         self.cf = ConfigParser.ConfigParser()
         self.cf.read(self.confName)
+        register_openers()
 
     def applyBaiduAccess(self):
         """apply baidu access to netdisk"""
@@ -198,6 +192,39 @@ class BaiduCloudAPI():
         f.close()
         return data
 
+    def uploadSingleFile(self, from_path, to_path=None):
+        """upload single file to Baidu Yun Pan"""
+        param = {'method': 'upload', 'ondup': 'newcopy', 'access_token': self.cf.get("BaiduCloud", "access_token")}
+        if to_path == None:
+            to_path = from_path
+        param['path'] = self.cf.get("BaiduCloud", "app_path") + "/" + to_path
+        url = self.cf.get("BaiduCloud", "upload_url") + '?'  + urllib.urlencode(param)
+        fp = open(from_path)
+        datagen, headers = multipart_encode({'file': fp})
+        #print datagen, headers
+        headers['User-Agent'] = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
+        req = urllib2.Request(url, datagen, headers)
+        req.unverifiable = True
+        ret_fp = urllib2.urlopen(req)
+        data = json.load(ret_fp)
+        ret_fp.close()
+        fp.close()
+        return data
+
+    def downloadSingleFile(self, from_path, to_path):
+        """download single file from Baidu Cloud"""
+        pass
+
+    def deleteSingleFile(self, path):
+        """delete singel file or folder"""
+        param = {'method': 'delete', 'access_token': self.cf.get("BaiduCloud", "access_token")}
+        param['path'] = self.cf.get('BaiduCloud', 'app_path') + '/' + path
+        url = self.cf.get('BaiduCloud', 'pcs_url') + '/file'
+        f = cloud_post(url, param)
+        data = json.load(f)
+        f.close()
+        return data
+
 #===================================================================================================
 
 class BaiduCloudActor(Thread):
@@ -245,12 +272,20 @@ class BaiduCloudActor(Thread):
         if msg.mID == MSG_ID_T_FILE_CREATE:
             print "[%s]: Create file: %s" % (self.getName(), msg.mBody["path"])
             try:
-                #upload_file_to_cloud(msg.mBody["path"])
-                print self.bAPI.getCloudInfo()
+                print self.bAPI.uploadSingleFile(msg.mBody["path"])
             except urllib2.HTTPError, e:
                 print e
             finally:
                 pass
+        elif msg.mID == MSG_ID_T_FILE_DELETE:
+            print "[%s]: Delete file: %s" % (self.getName(), msg.mBody["path"])
+            try:
+                print self.bAPI.deleteSingleFile(msg.mBody["path"])
+            except urllib2.HTTPError, e:
+                print e
+            finally:
+                pass
+
         return 0
 
     def handleOper(self, msg):
@@ -282,5 +317,7 @@ if __name__ == '__main__':
     #b = BaiduCloudAPI("conf.ini")
     #b.applyBaiduAccess()
     #b.applyAccessToken()
+    b = BaiduCloudActor()
+    b.handleFile(CloudMessage(MSG_TYPE_T_FILE, MSG_ID_T_FILE_DELETE, MSG_UNIQUE_ID_T_BAIDU_ACTOR, {'path': 'conf.ini'}))
     pass
 
