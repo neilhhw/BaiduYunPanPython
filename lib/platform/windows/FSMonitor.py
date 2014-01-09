@@ -18,6 +18,8 @@ from win32con import (
 from win32file import (
     AllocateReadBuffer,
     CreateFileW,
+    CreateIoCompletionPort,
+    GetQueuedCompletionStatus,
     GetOverlappedResult,
     ReadDirectoryChangesW,
     FILE_FLAG_OVERLAPPED,
@@ -74,40 +76,47 @@ class FileSysMonitor(Thread):
         #self.msgQueue = Queue.Queue()
         self.mask = FILESYSTEM_MONITOR_MASK
         self.buf_size = 0x100
+        self.comKey = 0
+        self.watchList = []
+        self.watchPath = []
+        self.ioComPort = None
         self.overlapped = OVERLAPPED()
         self.overlapped.hEvent = CreateEvent(None, 0, 0, None)
-        self.wait_stop = CreateEvent(None, 0, 0, None)
+        self.threadStop = False
 
     def run(self):
         """Thread entry"""
         print self.getName()
-        while True:
-            buf = AllocateReadBuffer(self.buf_size)
 
-            ReadDirectoryChangesW(
-                self.handle,
-                buf,
-                True,  # Always watch children
-                self.mask,
-                self.overlapped,
-            )
+        while not self.threadStop:
+            buffers = []
+            for handle in self.watchList:
+                buf = AllocateReadBuffer(self.buf_size)
+                ReadDirectoryChangesW(
+                        handle,
+                        buf,
+                        True,  # Always watch children
+                        self.mask,
+                        self.overlapped
+                        )
+                buffers.append(buf)
 
-            rc = WaitForMultipleObjects((self.wait_stop,
-                                         self.overlapped.hEvent),
-                                         0, INFINITE)
-            if rc == WAIT_OBJECT_0:
+            #print 'Thread run @ port 0x%X' % self.ioComPort
+            ec, data_len, comKey, overlapped = GetQueuedCompletionStatus(self.ioComPort, 1000)
+            #print "%d %d %d" % (ec, data_len, comKey)
+            #print overlapped
+            #if not ec:
                 # Stop event
-                break
+            #    break
             # if we continue, it means that we got some data, lets read it
-            data = GetOverlappedResult(self.handle, self.overlapped, True)
             # lets ead the data and store it in the results
-            events = FILE_NOTIFY_INFORMATION(buf, data)
+            events = FILE_NOTIFY_INFORMATION(buffers[comKey], data_len)
             for action, path in events:
-                print "Action: %s Path %s" % (ACTIONS_NAMES[action], path)
+                print "Action: %s Path %s" % (ACTIONS_NAMES[action], self.watchPath[comKey] + '\\' + path)
 
-    def addWatch(self, path):
+    def addWatch(self, path, mask=None):
         """Add watcher for path"""
-        self.handle = CreateFileW(
+        handle = CreateFileW(
                 path,
                 FILE_LIST_DIRECTORY,
                 FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -116,12 +125,27 @@ class FileSysMonitor(Thread):
                 FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED,
                 None)
 
+        self.ioComPort = CreateIoCompletionPort(handle, self.ioComPort, self.comKey, 0)
+        if mask != None:
+            self.mask = mask
+        self.watchList.append(handle)
+        self.watchPath.append(path)
+        self.comKey += 1
+
+    def stop(self):
+        """stop current thread"""
+        self.threadStop = True
+        for handle in self.watchList:
+            CloseHandle(handle)
+
 if __name__ == '__main__':
-    f = FileSysMonitor()
-    f.addWatch('.')
+    f = FileSysMonitor('FSMonitor-Test')
+    f.addWatch('D:\\')
+    f.addWatch('C:\\')
     f.start()
     try:
         while True:
             pass
     except KeyboardInterrupt:
         print "Press [Ctrl+C]"
+        f.stop()
