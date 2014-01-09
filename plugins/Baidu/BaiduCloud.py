@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import os
 import urllib
 import urllib2
 import json
@@ -15,12 +14,13 @@ from poster.streaminghttp import register_openers
 
 from threading import Thread
 
-from MsgManager import *
+#from lib.common.MsgManager import *
 
 #TODO: Add try, catch method
 #TODO: Add common test json print out
 #TODO: Extract some functions
 
+access_token = ''
 post_url = "https://c.pcs.baidu.com/rest/2.0/pcs/file"
 
 upload_param = {'method': 'upload', 'ondup': 'newcopy', 'access_token': access_token}
@@ -317,7 +317,9 @@ if __name__ == '__main__':
     #b = BaiduCloudAPI("conf.ini")
     #b.applyBaiduAccess()
     #b.applyAccessToken()
+    import os
+    path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    os.sys.path.insert(0, path)
+    from lib.common.MsgManager import *
     b = BaiduCloudActor()
     b.handleFile(CloudMessage(MSG_TYPE_T_FILE, MSG_ID_T_FILE_DELETE, MSG_UNIQUE_ID_T_BAIDU_ACTOR, {'path': 'conf.ini'}))
-    pass
-

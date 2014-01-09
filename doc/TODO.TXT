@@ -1,0 +1,5 @@
+1. Windows file system monitor
+2. Proxy added
+3. UI
+4. Configure Manager
+5. Folder change

@@ -1,6 +1,0 @@
-1. Add filter in FSMonitor
-2. Add plug-in framework
-3. Add GUI
-5. Windows file system monitor
-6. Configure Manager
-7. Add proxy
