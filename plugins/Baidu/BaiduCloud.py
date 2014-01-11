@@ -10,11 +10,12 @@ import webbrowser
 
 
 from poster.encode import multipart_encode
-from poster.streaminghttp import register_openers
+from poster.streaminghttp import StreamingHTTPHandler, StreamingHTTPRedirectHandler, StreamingHTTPSHandler
 
 from threading import Thread
 
-#from lib.common.MsgManager import *
+from UniFileSync.lib.common.MsgBus import *
+
 
 #TODO: Add try, catch method
 #TODO: Add common test json print out
@@ -108,13 +109,20 @@ def list_file_in_cloud(dir_name, by = "", order = ""):
     ret.close();
 
 #===================================================================================================
+proxyHandler = urllib2.ProxyHandler({'http': 'http://10.144.1.10:8080', 'https': 'https://10.144.1.10:8080'})
+
+def register_openers():
+    """register some openers into urlib2"""
+    handlers = [StreamingHTTPHandler, StreamingHTTPRedirectHandler, StreamingHTTPSHandler, proxyHandler]
+    urllib2.install_opener(urllib2.build_opener(*handlers))
+
 def cloud_get(url, data):
     """docstring for cloud_get"""
     url_data = urllib.urlencode(data)
     full_url = url + '?' + url_data
     print full_url
     #Enable Cookie
-    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor())
+    opener = urllib2.build_opener(proxyHandler, urllib2.HTTPCookieProcessor())
     response = opener.open(full_url)
     return response
 
@@ -122,8 +130,8 @@ def cloud_post(url, param):
     """Common cloud post method"""
     full_url = url + '?' + urllib.urlencode(param)
     req = urllib2.Request(full_url)
-    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor())
-    response = urllib2.urlopen(req)
+    opener = urllib2.build_opener(proxyHandler, urllib2.HTTPCookieProcessor())
+    response = opener.open(req)
     return response
 
 class BaiduCloudAPI():
@@ -317,9 +325,9 @@ if __name__ == '__main__':
     #b = BaiduCloudAPI("conf.ini")
     #b.applyBaiduAccess()
     #b.applyAccessToken()
-    import os
+    '''import os
     path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     os.sys.path.insert(0, path)
-    from lib.common.MsgManager import *
-    b = BaiduCloudActor()
-    b.handleFile(CloudMessage(MSG_TYPE_T_FILE, MSG_ID_T_FILE_DELETE, MSG_UNIQUE_ID_T_BAIDU_ACTOR, {'path': 'conf.ini'}))
+    '''
+    b = BaiduCloudActor('BaiduCloudActor-Test')
+    b.handleFile(CloudMessage(MSG_TYPE_T_FILE, MSG_ID_T_FILE_CREATE, MSG_UNIQUE_ID_T_SYNC_ACTOR, {'path': 'conf.ini'}))

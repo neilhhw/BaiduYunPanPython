@@ -1,47 +1,55 @@
+#!/usr/bin/env python
+#-*- coding: utf-8 -*-
 import wx
 
-
-class ConfFrame( wx.Frame ):
-	def __init__( self, parent ):
-		wx.Frame.__init__( self, parent, id = wx.ID_ANY, title = u"FileSync UI Configuration",
-                           pos = wx.DefaultPosition, size = wx.Size(600, 480),
-                           style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
-
-		self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
-
-		bSizer1 = wx.BoxSizer( wx.VERTICAL )
-
-		self.ConfTabPanel = wx.Notebook( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.FolderPanel = wx.Panel( self.ConfTabPanel, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-		bSizer5 = wx.BoxSizer( wx.VERTICAL )
-
-		self.m_listbook2 = wx.Listbook( self.FolderPanel, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LB_DEFAULT )
-
-		bSizer5.Add( self.m_listbook2, 1, wx.EXPAND |wx.ALL, 5 )
-
-
-		self.FolderPanel.SetSizer( bSizer5 )
-		self.FolderPanel.Layout()
-		bSizer5.Fit( self.FolderPanel )
-		self.ConfTabPanel.AddPage( self.FolderPanel, u"Folders", True )
-		self.m_panel10 = wx.Panel( self.ConfTabPanel, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-		self.ConfTabPanel.AddPage( self.m_panel10, u"a page", False )
-		self.m_panel11 = wx.Panel( self.ConfTabPanel, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-		self.ConfTabPanel.AddPage( self.m_panel11, u"a page", False )
-
-		bSizer1.Add( self.ConfTabPanel, 1, wx.EXPAND |wx.ALL, 5 )
-
-
-		self.SetSizer( bSizer1 )
-		self.Layout()
-
-		self.Centre( wx.BOTH )
-
-	def __del__( self ):
-		pass
-
-TRAY_TOOLTIP = 'File Sync for Baidu Cloud'
+TRAY_TOOLTIP = u'Uni File Sync'
 TRAY_ICON = 'icon.png'
+FILESYNC_CONF_TITLE = u'Unit File Sync Configuration'
+
+
+class FolderPanel(wx.Panel):
+    """docstring for FolderPanel"""
+    def __init__(self, parent):
+        super(FolderPanel, self).__init__(parent)
+
+class NetConfPanel(wx.Panel):
+    """docstring for NetConfPanel"""
+    def __init__(self, parent):
+        super(NetConfPanel, self).__init__(parent)
+
+class ExplorePanel(wx.Panel):
+    """docstring for ExplorePanel"""
+    def __init__(self, parent):
+        super(ExplorePanel, self).__init__(parent)
+
+
+
+class MainTabPanel(wx.Notebook):
+    """main tab panel"""
+    def __init__(self, parent):
+        super(MainTabPanel, self).__init__(parent)
+        self.parent = parent
+        self.folderPanel = FolderPanel(self)
+        self.AddPage(self.folderPanel, u'Folders')
+        self.netConfPanel = NetConfPanel(self)
+        self.AddPage(self.netConfPanel, u'Net Configuration')
+        self.explorePanel = ExplorePanel(self)
+        self.AddPage(self.explorePanel, u'Explore')
+
+
+class ConfFrame(wx.Frame):
+    def __init__(self, parent=None):
+        w = 800
+        h = 600
+        ScreenWidth, ScreenHeight = wx.GetDisplaySize()
+        x = (ScreenWidth - w) / 2
+        y = (ScreenHeight - h) / 2
+        FrameStyle = wx.DEFAULT_FRAME_STYLE
+        FrameStyle &= ~wx.RESIZE_BORDER
+        wx.Frame.__init__(self, parent, size=(w, h), pos=(x, y), title=FILESYNC_CONF_TITLE, style=FrameStyle)
+        self.MainPanel = MainTabPanel(self)
+
+#==================================================================
 
 def create_menu_item(menu, label, func):
     item = wx.MenuItem(menu, -1, label)
@@ -49,19 +57,17 @@ def create_menu_item(menu, label, func):
     menu.AppendItem(item)
     return item
 
-
 class TaskBarIcon(wx.TaskBarIcon):
     def __init__(self):
         super(TaskBarIcon, self).__init__()
         self.set_icon(TRAY_ICON)
         self.Bind(wx.EVT_TASKBAR_LEFT_DOWN, self.on_left_down)
-        self.confFrame = ConfFrame(parent=None)
 
     def CreatePopupMenu(self):
         menu = wx.Menu()
-        create_menu_item(menu, 'Configure File Sync', self.on_config)
+        create_menu_item(menu, u'Configure File Sync', self.on_config)
         menu.AppendSeparator()
-        create_menu_item(menu, 'Exit', self.on_exit)
+        create_menu_item(menu, u'Exit', self.on_exit)
         return menu
 
     def set_icon(self, path):
@@ -72,17 +78,17 @@ class TaskBarIcon(wx.TaskBarIcon):
         print 'Tray icon was left-clicked.'
 
     def on_config(self, event):
-        print 'Open configuration Form'
+        self.confFrame = ConfFrame(parent=None)
         self.confFrame.Show(True)
 
     def on_exit(self, event):
         wx.CallAfter(self.Destroy)
 
 
-class FileSyncUI(wx.App):
+class UniFileSyncUI(wx.App):
     """File Sync UI"""
     def __init__(self, arg=None):
-        super(FileSyncUI, self).__init__()
+        super(UniFileSyncUI, self).__init__()
         self.arg = arg
 
     def OnInit(self):
@@ -90,9 +96,6 @@ class FileSyncUI(wx.App):
         TaskBarIcon()
         return True
 
-def wx_main():
-    app = FileSyncUI()
-    app.MainLoop()
-
 if __name__ == '__main__':
-    wx_main()
+    app = UniFileSyncUI()
+    app.MainLoop()

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+#-*- coding: utf-8 -*-
 
 #File Operation
 MSG_ID_T_FILE_CREATE = 1
@@ -11,12 +12,6 @@ MSG_ID_T_FILE_MODIFY = 6
 #Internal Operation
 MSG_ID_T_OPER_STOP = 7
 
-#Operation Result
-E_OK            =  0
-E_FAIL          = -1
-E_UPLOAD_FAIL   = -2
-E_API_ERR       = -3
-
 #Message type
 MSG_TYPE_T_FILE = 1
 MSG_TYPE_T_OPER = 2
@@ -24,8 +19,8 @@ MSG_TYPE_T_RES  = 3
 MSG_TYPE_T_CONF = 4
 
 #Message Unique ID
-MSG_UNIQUE_ID_T_MAIN            = 0
-MSG_UNIQUE_ID_T_BAIDU_ACTOR     = 1
+MSG_UNIQUE_ID_T_CONTROLLER      = 0
+MSG_UNIQUE_ID_T_SYNC_ACTOR      = 1
 MSG_UNIQUE_ID_T_FS_MONITOR      = 2
 
 class CloudMessage():
@@ -36,11 +31,11 @@ class CloudMessage():
         self.mBody = mBody
         self.mUid = mUid
 
-
-class MsgManager():
-    """Message controller"""
+class MsgBus():
+    """Message bus"""
     def __init__(self, msgTable={}):
         self.msgTable = msgTable
+        self.uniIDList =[MSG_UNIQUE_ID_T_CONTROLLER, MSG_UNIQUE_ID_T_SYNC_ACTOR, MSG_UNIQUE_ID_T_FS_MONITOR]
 
     def regQ(self, msgUniID, msgQueue):
         """register msg Queue"""
@@ -50,4 +45,9 @@ class MsgManager():
         """find msg queue"""
         return self.msgTable[msgUniID]
 
-msgManager = MsgManager()
+    def regUniID(self, msgUniID):
+        """register new msg uni ID"""
+        self.uniIDList.append(msgUniID)
+
+#This bus is for uniFileSync only
+fileSyncMsgBus = MsgBus()
