@@ -13,8 +13,8 @@ from threading import Thread
 from UniFileSync.lib.common.MsgBus import *
 from UniFileSync.lib.common.Error import *
 
-import UniFileSync.lib.common.LogManager
-import logging
+from UniFileSync.lib.common.LogManager import logging
+from UniFileSync.lib.common.PluginManager import PluginManager
 
 proxyHandler = urllib2.ProxyHandler({'http': 'http://10.144.1.10:8080', 'https': 'https://10.144.1.10:8080'})
 
@@ -38,45 +38,6 @@ def cloud_post(url, param):
     response = urllib2.urlopen(req)
     return response
 
-
-#===========================Plug-in Class for SYNC API =====================
-class ClouldAPI(object):
-    """This is common API for cloud sync
-       Plug in should extract this class
-    """
-    def __init__(self, name=None):
-        super(ClouldAPI, self).__init__()
-        self.name = name
-
-    def applyAccess(self):
-        """docstring for applyAccess"""
-        return True
-
-    def getToken(self):
-        """docstring for getToken"""
-        return True
-
-    def uploadSingleFile(self, filePath, syncPath=None):
-        """upload single file to net disk"""
-        return True
-
-    def downloadSingleFile(self, filePath, syncPath=None):
-        """download single file from net disk"""
-        return True
-
-    def deleteSingleFile(self, filePath, syncPath=None):
-        """delete single file from net disk"""
-        return True
-
-    def mkdirInCloud(self, dirPath):
-        """make dir in net disk"""
-        return True
-
-    def lsInCloud(self, dirPath):
-        """list files in dirPath in cloud"""
-        return True
-
-
 class SyncCloudActor(Thread):
     """This is a thread for Baidu Yun Pan"""
     def __init__(self, name=None):
@@ -91,6 +52,8 @@ class SyncCloudActor(Thread):
                 MSG_TYPE_T_RES : lambda msg : self.handleRes(msg),
                 MSG_TYPE_T_CONF: lambda msg : self.handleConf(msg)
                 }
+
+        self.pluginManager = PluginManager.getManager()
 
     def run(self):
         """Thread main function"""
@@ -119,7 +82,8 @@ class SyncCloudActor(Thread):
         if msg.mID == MSG_ID_T_FILE_CREATE:
             print "[%s]: Create file: %s" % (self.getName(), msg.mBody["path"])
             try:
-                print self.cloudAPI.uploadSingleFile(msg.mBody["path"])
+                for p in self.pluginManager.getAllPlugins():
+                    p.getAPI().uploadSingleFile(msg.mBody['path'])
             except urllib2.HTTPError, e:
                 print e
             finally:
@@ -127,7 +91,8 @@ class SyncCloudActor(Thread):
         elif msg.mID == MSG_ID_T_FILE_DELETE:
             print "[%s]: Delete file: %s" % (self.getName(), msg.mBody["path"])
             try:
-                print self.cloudAPI.deleteSingleFile(msg.mBody["path"])
+                for p in self.pluginManager.getAllPlugins():
+                    p.getAPI().deleteSingleFile(msg.mBody['path'])
             except urllib2.HTTPError, e:
                 print e
             finally:
@@ -151,8 +116,3 @@ class SyncCloudActor(Thread):
     def handleConf(self, msg):
         """handle file operation"""
         return 0
-
-
-if __name__ == '__main__':
-    logging.debug('Test 2')
-
