@@ -32,6 +32,22 @@ class PluginManager(object):
         self.register(plugin)
         plugin.load()
 
+    def reload(self, plugin):
+        """reload plugin"""
+        plugin.unload()
+        plugin.load()
+
+    def getPlugin(self, name):
+        """get plugin with name"""
+        for p in self.__plugin_list:
+            if name == p.name:
+                return p
+        return None
+
+    def getAllPlugins(self):
+        """get all loaded plugins"""
+        return self.__plugin_list
+
     def debug(self):
         """docstring for test"""
         for p in self.__plugin_list:
