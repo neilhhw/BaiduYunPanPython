@@ -13,10 +13,12 @@ class Plugin(object):
 
     def load(self):
         """Plugin load"""
+        logging.debug('%s is loading', self.name)
         return True
 
     def unload(self):
         """Plugin unload"""
+        logging.debug('%s is unloading', self.name)
         return True
 
     def active(self):
@@ -34,6 +36,10 @@ class Plugin(object):
     def installAPI(self, api):
         """install cloud API to plugin"""
         self.__API = api
+
+    def uninstallAPI(self):
+        """uninstall Plugin related API"""
+        self.__API = None
 
 #===========================Plug-in Class for SYNC API =====================
 class ClouldAPI(object):

@@ -5,9 +5,6 @@ import urllib
 import urllib2
 import Queue
 
-from poster.encode import multipart_encode
-from poster.streaminghttp import StreamingHTTPHandler, StreamingHTTPRedirectHandler, StreamingHTTPSHandler
-
 from threading import Thread
 
 from UniFileSync.lib.common.MsgBus import *
@@ -15,28 +12,6 @@ from UniFileSync.lib.common.Error import *
 
 from UniFileSync.lib.common.LogManager import logging
 from UniFileSync.lib.common.PluginManager import PluginManager
-
-proxyHandler = urllib2.ProxyHandler({'http': 'http://10.144.1.10:8080', 'https': 'https://10.144.1.10:8080'})
-
-#==========Common Web operation
-def register_openers():
-    """register some openers into urlib2"""
-    #Enable media post, proxy, cookie
-    handlers = [StreamingHTTPHandler, StreamingHTTPRedirectHandler, StreamingHTTPSHandler, proxyHandler, urllib2.HTTPCookieProcessor]
-    urllib2.install_opener(urllib2.build_opener(*handlers))
-
-def cloud_get(url, data):
-    """common cloud get method"""
-    full_url = url + '?' + urllib.urlencode(data)
-    response = urllib2.urlopen(full_url)
-    return response
-
-def cloud_post(url, param):
-    """Common cloud post method"""
-    full_url = url + '?' + urllib.urlencode(param)
-    req = urllib2.Request(full_url)
-    response = urllib2.urlopen(req)
-    return response
 
 class SyncCloudActor(Thread):
     """This is a thread for Baidu Yun Pan"""
@@ -57,7 +32,7 @@ class SyncCloudActor(Thread):
 
     def run(self):
         """Thread main function"""
-        logging.info(self.GetName() + 'Start')
+        logging.info('[%s] is starting',self.getName())
         while True:
             try:
                 msg = self.msgQueue.get(True)
