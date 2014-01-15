@@ -3,87 +3,103 @@
 
 import sys
 import os
-import signal
 import Queue
+import threading
 
-from BaiduCloud import BaiduCloudActor
-from FSMonitor  import FileSysMonitor
+from UniFileSync.lib.common.MsgBus import *
+from UniFileSync.lib.common.FSMonitor import *
 
-from MsgManager import *
+class Controller(threading.Thread):
+    """UniFileSync Controller"""
+    def __init__(self, name=None):
+        super(Controller, self).__init__()
+        if not name:
+            self.setName(name)
+        self.msgQueue = Queue.Queue()
+        self.__threadStop = False
 
-def signal_handler(signal, frame):
-    """signal handler for any signal"""
-    print "[Main]: Press Ctrl+C"
-    msgQueue = msgManager.findQ(MSG_UNIQUE_ID_T_MAIN)
-    msgQueue.put(CloudMessage(MSG_TYPE_T_OPER, MSG_ID_T_OPER_STOP, MSG_UNIQUE_ID_T_MAIN, {}))
+        self.operTable = {
+                         MSG_TYPE_T_FILE: lambda msg : self.handleFile(msg),
+                         MSG_TYPE_T_OPER: lambda msg : self.handleOper(msg),
+                         MSG_TYPE_T_RES : lambda msg : self.handleRes(msg),
+                         MSG_TYPE_T_CONF: lambda msg : self.handleConf(msg)
+                         }
 
-def handleFile(msg):
-    """handle file operation"""
-    pass
+        self.regQ()
 
-def handleOper(msg):
-    """handle file operation"""
-    bMsgQueue = msgManager.findQ(MSG_UNIQUE_ID_T_BAIDU_ACTOR)
-    fMsgQueue = msgManager.findQ(MSG_UNIQUE_ID_T_FS_MONITOR)
-    mMsgQueue = msgManager.findQ(MSG_UNIQUE_ID_T_MAIN)
+    def regQ(self):
+        """register queue to message bus"""
+        MsgBus.getBus().regQ(MSG_UNIQUE_ID_T_CONTROLLER, self.msgQueue)
 
-    if msg.mID == MSG_ID_T_OPER_STOP:
-        bMsgQueue.put(CloudMessage(MSG_TYPE_T_OPER, MSG_ID_T_OPER_STOP, MSG_UNIQUE_ID_T_MAIN, {}))
-        fMsgQueue.put(CloudMessage(MSG_TYPE_T_OPER, MSG_ID_T_OPER_STOP, MSG_UNIQUE_ID_T_MAIN, {}))
+    def run(self):
+        """thread entry"""
+        sActor = SyncCloudActor("BaiduCloudActor")
+        fMonitor = FileSysMonitor("FSMonitor")
+        fMonitor.addWatch(os.getcwd())
+        fMonitor.start()
+        sActor.start()
 
-        '''
-        msg = mMsgQueue.get(True, 2)
-        if msg.mUid == MSG_UNIQUE_ID_T_BAIDU_ACTOR and msg.mID == MSG_ID_T_OPER_STOP:
-            if msg.mBody[0] == E_OK:
-                print "Stop BaiduCloudActor OK"
-            else:
-                print "Stop BaiduCloudActor NOK: 0x%X" % msg.mBody[0]
+        while not self.__threadStop:
+            try:
+                msg = msgQueue.get(True, 2)
+                if msg != None:
+                    self.operTable[msg.mType](msg)
+            except Queue.Empty:
+                pass
 
-        msg = mMsgQueue.get(True, 2)
-        if msg.mUid == MSG_UNIQUE_ID_T_FS_MONITOR and msg.mID == MSG_ID_T_OPER_STOP:
-            if msg.mBody[0] == E_OK:
-                print "Stop FSMonitor OK"
-            else:
-                print "Stop FSMonitor NOK: 0x%X" % msg.mBody[0]
+    def stop(self):
+        """stop Controller thread"""
+        self.__threadStop = True
 
-        '''
-        sys.exit(-1)
+    def handleFile(self, msg):
+        """handle file operation"""
+        pass
 
-def handleRes(msg):
-    """handle file operation"""
-    pass
+    def handleOper(self, msg):
+        """handle file operation"""
+        bMsgQueue = MsgBus.getBus().findQ(MSG_UNIQUE_ID_T_BAIDU_ACTOR)
+        fMsgQueue = MsgBus.getBus().findQ(MSG_UNIQUE_ID_T_FS_MONITOR)
+        mMsgQueue = MsgBus.getBus().findQ(MSG_UNIQUE_ID_T_CONTROLLER)
 
-def handleConf(msg):
-    """handle file operation"""
-    pass
+        if msg.mID == MSG_ID_T_OPER_STOP:
+            bMsgQueue.put(CloudMessage(MSG_TYPE_T_OPER, MSG_ID_T_OPER_STOP, MSG_UNIQUE_ID_T_CONTROLLER, {}))
+            fMsgQueue.put(CloudMessage(MSG_TYPE_T_OPER, MSG_ID_T_OPER_STOP, MSG_UNIQUE_ID_T_CONTROLLER, {}))
 
-operTable = {
-        MSG_TYPE_T_FILE: lambda msg : handleFile(msg),
-        MSG_TYPE_T_OPER: lambda msg : handleOper(msg),
-        MSG_TYPE_T_RES : lambda msg : handleRes(msg),
-        MSG_TYPE_T_CONF: lambda msg : handleConf(msg)
-        }
+            '''
+            msg = mMsgQueue.get(True, 2)
+            if msg.mUid == MSG_UNIQUE_ID_T_BAIDU_ACTOR and msg.mID == MSG_ID_T_OPER_STOP:
+                if msg.mBody[0] == E_OK:
+                    print "Stop BaiduCloudActor OK"
+                else:
+                    print "Stop BaiduCloudActor NOK: 0x%X" % msg.mBody[0]
 
-def main():
-    """This is the main entry for Baidu Cloud Disk"""
-    msgQueue = Queue.Queue()
-    msgManager.regQ(MSG_UNIQUE_ID_T_MAIN, msgQueue)
-    signal.signal(signal.SIGINT, signal_handler)
-    cActor = BaiduCloudActor("BaiduCloudActor")
-    cActor.regQ()
-    fMonitor = FileSysMonitor("FSMonitor")
-    fMonitor.regQ()
-    fMonitor.addWatch(os.getcwd())
-    fMonitor.start()
-    cActor.start()
+            msg = mMsgQueue.get(True, 2)
+            if msg.mUid == MSG_UNIQUE_ID_T_FS_MONITOR and msg.mID == MSG_ID_T_OPER_STOP:
+                if msg.mBody[0] == E_OK:
+                    print "Stop FSMonitor OK"
+                else:
+                    print "Stop FSMonitor NOK: 0x%X" % msg.mBody[0]
+
+            '''
+            self.stop()
+
+    def handleRes(self, msg):
+        """handle file operation"""
+        pass
+
+    def handleConf(self, msg):
+        """handle file operation"""
+        pass
+
+
+if __name__ == '__main__':
+    controller = Controller('UniFileSync Controller')
+    controller.start()
 
     while True:
         try:
-            msg = msgQueue.get(True, 2)
-            if msg != None:
-                operTable[msg.mType](msg)
-        except Queue.Empty:
             pass
-
-if __name__ == '__main__':
-    main()
+        except KeyboardInterrupt:
+            logging.info('[UniFileSync Controller]: Press Ctrl+C')
+            msgQueue = MsgBus.getBus().findQ(MSG_UNIQUE_ID_T_CONTROLLER)
+            msgQueue.put(CloudMessage(MSG_TYPE_T_OPER, MSG_ID_T_OPER_STOP, MSG_UNIQUE_ID_T_CONTROLLER, {}))

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
+import threading
+from UniFileSync.lib.common.LogManager import logging
 
 #File Operation
 MSG_ID_T_FILE_CREATE = 1
@@ -31,23 +33,35 @@ class CloudMessage():
         self.mBody = mBody
         self.mUid = mUid
 
-class MsgBus():
+class MsgBus(object):
     """Message bus"""
-    def __init__(self, msgTable={}):
-        self.msgTable = msgTable
-        self.uniIDList =[MSG_UNIQUE_ID_T_CONTROLLER, MSG_UNIQUE_ID_T_SYNC_ACTOR, MSG_UNIQUE_ID_T_FS_MONITOR]
+    def __init__():
+        """Forbid __init__(self)"""
+        pass
+
+    __instance = None
+    __lock     = threading.Lock()
+    __msg_table = {}
+    __uni_ID_list = [MSG_UNIQUE_ID_T_CONTROLLER, MSG_UNIQUE_ID_T_SYNC_ACTOR, MSG_UNIQUE_ID_T_FS_MONITOR]
+
+    @staticmethod
+    def getBus():
+        """Get Message Bus singlone instance"""
+        MsgBus.__lock.acquire()
+        if not MsgBus.__instance:
+            MsgBus.__instance = super(MsgBus, MsgBus).__new__(MsgBus)
+            super(MsgBus, MsgBus).__init__(MsgBus.__instance)
+        MsgBus.__lock.release()
+        return MsgBus.__instance
 
     def regQ(self, msgUniID, msgQueue):
         """register msg Queue"""
-        self.msgTable[msgUniID] = msgQueue
+        self.__msg_table[msgUniID] = msgQueue
 
     def findQ(self, msgUniID):
         """find msg queue"""
-        return self.msgTable[msgUniID]
+        return self.__msg_table[msgUniID]
 
     def regUniID(self, msgUniID):
         """register new msg uni ID"""
-        self.uniIDList.append(msgUniID)
-
-#This bus is for uniFileSync only
-fileSyncMsgBus = MsgBus()
+        self.__uni_ID_list.append(msgUniID)

@@ -17,7 +17,7 @@ class SyncCloudActor(Thread):
     """This is a thread for Baidu Yun Pan"""
     def __init__(self, name=None):
         super(SyncCloudActor, self).__init__()
-        if name != None:
+        if not name:
             self.setName(name)
         self.msgQueue = Queue.Queue()
 
@@ -33,6 +33,7 @@ class SyncCloudActor(Thread):
     def run(self):
         """Thread main function"""
         logging.info('[%s] is starting',self.getName())
+        self.regQ()
         while True:
             try:
                 msg = self.msgQueue.get(True)
