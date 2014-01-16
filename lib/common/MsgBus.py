@@ -65,3 +65,8 @@ class MsgBus(object):
     def regUniID(self, msgUniID):
         """register new msg uni ID"""
         self.__uni_ID_list.append(msgUniID)
+
+    def unregQ(self, msgUniID):
+        """unregister msg queue"""
+        self.__msg_table[msgUniID] = None
+        self.__uni_ID_list.remove(msgUniID)
