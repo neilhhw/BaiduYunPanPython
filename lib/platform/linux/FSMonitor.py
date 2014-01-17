@@ -10,7 +10,6 @@ from pyinotify import WatchManager, Notifier, \
         IN_ATTRIB, IN_MOVED_TO, IN_MOVED_FROM
 
 from threading import Thread
-from MsgManager import *
 
 class EventHandler(ProcessEvent):
     def my_init(self, **kargs):
@@ -45,10 +44,10 @@ class EventHandler(ProcessEvent):
         """docstring for process_IN_MOVED_FROM"""
         pass
 
-class FileSysMonitor(Thread):
+class LinuxFileSysMonitor(Thread):
     """File system monitor thread"""
     def __init__(self, name=None):
-        super(FileSysMonitor, self).__init__()
+        super(LinuxFileSysMonitor, self).__init__()
 
         if name != None:
             self.setName(name)
@@ -107,7 +106,7 @@ class FileSysMonitor(Thread):
         msgManager.regQ(MSG_UNIQUE_ID_T_FS_MONITOR, self.msgQueue)
 
 if __name__ == "__main__":
-    fsThread = FileSysMonitor("Thread-FSMonitor")
+    fsThread = LinuxFileSysMonitor("Thread-FSMonitor")
     fsThread.start()
 
     while True:

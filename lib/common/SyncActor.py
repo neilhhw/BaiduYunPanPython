@@ -30,36 +30,38 @@ class SyncActor(threading.Thread):
 
     def run(self):
         """Thread main function"""
-        logging.info('[%s] is starting',self.getName())
-        self.regQ()
+        logging.info('[%s] is starting', self.getName())
+        self.regToMsgBus()
         while not self.__threadStop:
             try:
                 #Block until one message is received
                 msg = self.msgQueue.get(True)
                 res = self.operTable[msg.mType](msg)
                 if res != E_OK:
-                    logging.debug('[%s]: handle message %d failure', msg.mID)
+                    logging.debug('[%s]: handle message %d failure', self.getName(), msg.mID)
             except Queue.Empty, e:
                 logging.error('[%s]: Queue item is empty', self.getName())
 
     def stop(self):
         """stop Controller thread"""
-        logging.debug('[%s] is stopping', self.getName())
-        self.unregQ()
+        logging.info('[%s] is stopping', self.getName())
+        self.unregFromMsgBus()
         self.__threadStop = True
 
-    def regQ(self):
+    def regToMsgBus(self):
         """regsiter message queue to manager"""
         MsgBus.getBus().regQ(MSG_UNIQUE_ID_T_SYNC_ACTOR, self.msgQueue)
+        MsgBus.getBus().regReceiver(MSG_UNIQUE_ID_T_CONTROLLER, MSG_UNIQUE_ID_T_SYNC_ACTOR)
 
-    def unregQ(self):
+    def unregFromMsgBus(self):
         """regsiter message queue to manager"""
-        MsgBus.getBus().regQ(MSG_UNIQUE_ID_T_SYNC_ACTOR)
+        MsgBus.getBus().unregQ(MSG_UNIQUE_ID_T_SYNC_ACTOR)
+        MsgBus.getBus().unregReceiver(MSG_UNIQUE_ID_T_CONTROLLER, MSG_UNIQUE_ID_T_SYNC_ACTOR)
 
     def replyMsg(self, msg, result):
         """reply message with result"""
         rMsgQueue = MsgBus.getBus().findQ(msg.mUid)
-        rMsgQueue.put(CloudMessage(msg.mType, msg.mID, MSG_UNIQUE_ID_T_SYNC_ACTOR, {0: result}))
+        rMsgQueue.put(CloudMessage(msg.mType, msg.mID, MSG_UNIQUE_ID_T_SYNC_ACTOR, {'result': result}))
 
     def handleFile(self, msg):
         """handle file operation"""

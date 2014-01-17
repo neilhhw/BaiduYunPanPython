@@ -7,4 +7,4 @@ E_PERM          = -1
 E_UPLOAD_FAIL   = -2
 E_API_ERR       = -3
 E_OPEN_FAIL     = -4
-
+E_INVILD_PARAM  = -5
