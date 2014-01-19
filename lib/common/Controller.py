@@ -10,6 +10,7 @@ import platform
 from UniFileSync.lib.common.MsgBus import *
 from UniFileSync.lib.common.SyncActor import SyncActor
 from UniFileSync.lib.common.LogManager import logging
+from UniFileSync.lib.common.PluginManager import PluginManager
 
 if platform.system() == 'Windows':
     from UniFileSync.lib.platform.windows.FSMonitor import WinFileSysMonitor as FileSysMonitor
@@ -51,6 +52,7 @@ class Controller(threading.Thread):
         """thread entry"""
         logging.info('[%s]: is starting', self.getName())
         self.regToMsgBus()
+        PluginManager.getManager().loadAllPlugins()
         self.sActor = SyncActor("SyncActor")
         self.fMonitor = FileSysMonitor("FSMonitor")
         self.fMonitor.addWatch(os.getcwd())

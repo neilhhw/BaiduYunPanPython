@@ -41,7 +41,6 @@ class FileSysMonitor(threading.Thread):
         self.msgQueue = Queue.Queue()
         self.threadStop = False
         self.defaultMask = 0
-        #logging.debug('[FileSysMonitor]: __init__ name %s', name)
 
         self.operTable = {
                 MSG_TYPE_T_FILE: lambda msg : self.handleFile(msg),
@@ -81,14 +80,19 @@ class FileSysMonitor(threading.Thread):
         MsgBus.getBus().unregQ(MSG_UNIQUE_ID_T_FS_MONITOR)
         MsgBus.getBus().unregReceiver(MSG_UNIQUE_ID_T_CONTROLLER, MSG_UNIQUE_ID_T_FS_MONITOR)
 
-    def notify(self, action, path):
+    def notify(self, action, path, src_path=None):
         """notify to others who cares about files change"""
-        logging.debug('[%s]: action: %s path: %s', self.getName(), ACTIONS_NAMES[action], path)
-        #print 'action: %s path %s' % (ACTIONS_NAMES[action], path)
+        if src_path:
+            logging.debug('[%s]: action: %s path: %s, src_path: %s', self.getName(), ACTIONS_NAMES[action], path, src_path)
+            mBody = {'path': path, 'action': action, 'src_path': src_path}
+        else:
+            logging.debug('[%s]: action: %s path: %s', self.getName(), ACTIONS_NAMES[action], path)
+            mBody = {'path': path, 'action': action}
+
         for recID in MsgBus.getBus().getReceivers(MSG_UNIQUE_ID_T_FS_MONITOR):
             msgQueue = MsgBus.getBus().findQ(recID)
             if msgQueue:
-                msgQueue.put(CloudMessage(MSG_TYPE_T_FILE, MSG_ID_MAP[action], MSG_UNIQUE_ID_T_FS_MONITOR, {'path': path, 'action': action}))
+                msgQueue.put(CloudMessage(MSG_TYPE_T_FILE, MSG_ID_MAP[action], MSG_UNIQUE_ID_T_FS_MONITOR, mBody))
 
     def processMsg(self, timeout=None):
         """process message loop for not blocking"""
@@ -127,7 +131,6 @@ class FileSysMonitor(threading.Thread):
     def handleFile(self, msg):
         """handle file operation"""
         return E_OK
-
 
     def replyMsg(self, msg, result):
         """reply message with result"""

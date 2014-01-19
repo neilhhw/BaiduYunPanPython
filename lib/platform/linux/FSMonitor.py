@@ -1,123 +1,90 @@
 #!/usr/bin/env python
 # encoding:utf-8
 
+import threading
 import os
-import time
-import Queue
+
+from UniFileSync.lib.common.FSMonitor import (
+        FileSysMonitor,
+        FILE_CREATE,
+        FILE_DELETE,
+        FILE_MODIFY,
+        FILE_MOVED_FROM,
+        FILE_MOVED_TO)
+
+from UniFileSync.lib.common.LogManager import logging
 
 from pyinotify import WatchManager, Notifier, \
         ProcessEvent, IN_DELETE, IN_CREATE, IN_MODIFY, \
         IN_ATTRIB, IN_MOVED_TO, IN_MOVED_FROM
 
-from threading import Thread
-
 class EventHandler(ProcessEvent):
     def my_init(self, **kargs):
         """according to doc"""
-        self.msgQueue = kargs["queue"]
+        self.fsMonitor = kargs["fsMonitor"]
 
     """事件处理"""
     def process_IN_CREATE(self, event):
         path = os.path.join(event.path, event.name)
-        print   "[FSMonitor]: Create file: %s "  %  path
-        self.msgQueue.put(CloudMessage(MSG_TYPE_T_FILE, MSG_ID_T_FILE_CREATE, MSG_UNIQUE_ID_T_FS_MONITOR, {"path": path}))
+        self.fsMonitor.notify(FILE_CREATE, path)
 
     def process_IN_DELETE(self, event):
         path = os.path.join(event.path, event.name)
-        print   "[FSMonitor]: Delete file: %s "  %  path
-        self.msgQueue.put(CloudMessage(MSG_TYPE_T_FILE, MSG_ID_T_FILE_DELETE, MSG_UNIQUE_ID_T_FS_MONITOR, {"path": path}))
+        self.fsMonitor.notify(FILE_DELETE, path)
 
     def process_IN_MODIFY(self, event):
         path = os.path.join(event.path, event.name)
-        print   "[FSMonitor]: Modify file: %s "  %  path
-        self.msgQueue.put(CloudMessage(MSG_TYPE_T_FILE, MSG_ID_T_FILE_MODIFY, MSG_UNIQUE_ID_T_FS_MONITOR, {"path": path}))
+        self.fsMonitor.notify(FILE_MODIFY, path)
 
     def process_IN_ATTRIB(self, event):
-        print   "[FSMonitor]: ATTRIB file: %s "  %   os.path.join(event.path,event.name)
+        logging.debug('[%s]: ATTRIB file: %s', self.fsMonitor.getName(), os.path.join(event.path,event.name))
 
     def process_IN_MOVED_TO(self, event):
-        print   "[FSMonitor]: MOVED TO file: %s  =>  %s " % (event.src_pathname , os.path.join(event.path,event.name))
-        self.msgQueue.put(CloudMessage(MSG_TYPE_T_FILE, MSG_ID_T_FILE_RENAME, MSG_UNIQUE_ID_T_FS_MONITOR,
-                                        {"src": event.src_pathname, "dest": event.path}))
+        self.fsMonitor.notify(FILE_MOVED_TO, os.path.join(event.path, event.name), os.path.join(event.path, event.src_pathname))
 
     def process_IN_MOVED_FROM(self, event):
         """docstring for process_IN_MOVED_FROM"""
         pass
 
-class LinuxFileSysMonitor(Thread):
+class LinuxFileSysMonitor(FileSysMonitor):
     """File system monitor thread"""
     def __init__(self, name=None):
-        super(LinuxFileSysMonitor, self).__init__()
-
-        if name != None:
-            self.setName(name)
-
-        self.msgQueue = Queue.Queue()
+        super(LinuxFileSysMonitor, self).__init__(name)
+        self.defaultMask = IN_DELETE | IN_CREATE | IN_MODIFY | IN_MOVED_TO | IN_MOVED_FROM
         self.wm = WatchManager()
-        self.mask = IN_DELETE | IN_CREATE | IN_MODIFY | IN_ATTRIB | IN_MOVED_TO | IN_MOVED_FROM
+        self.__lock = threading.Lock()
 
-    def addWatch(self, path):
+    def addWatch(self, path, mask=None):
         """Add watch for path"""
-        self.wm.add_watch(path, self.mask, auto_add=True, rec=True)
-        print 'now starting monitor %s' % (path)
-
-    def addMask(self, mask):
-        """Add watcher mask"""
-        self.mask = self.mask | mask
+        super(LinuxFileSysMonitor, self).addWatch(path, mask)
+        if not mask:
+            mask = self.defaultMask
+        self.wm.add_watch(path, mask, auto_add=True, rec=True)
 
     def run(self):
         """Thread entry"""
-        print self.getName()
-        self.bActorMsgQueue = msgManager.findQ(MSG_UNIQUE_ID_T_BAIDU_ACTOR)
-        self.notifier = Notifier(self.wm, EventHandler(None, queue = self.bActorMsgQueue))
+        super(LinuxFileSysMonitor, self).run()
+        self.notifier = Notifier(self.wm, EventHandler(None, fsMonitor = self))
 
-        while True:
+        while not self.threadStop:
+            self.processMsg(1)
             if self.notifier.check_events(1000):
                 self.notifier.read_events()
                 self.notifier.process_events()
-            try:
-                msg = self.msgQueue.get(False)
-                if msg.mType == MSG_TYPE_T_OPER:
-                    if msg.mID == MSG_ID_T_OPER_STOP:
-                        print "[%s]: Stop" % self.getName()
-                        self.replyMsg(msg, E_OK)
-                        self.stop()
-                        break
-                else:
-                    print "[FSMonitor]: Not accept other type 0x%X message:" % msg.mType
-            except Queue.Empty:
-                pass
-
-    def replyMsg(self, msg, result):
-        """reply message with result"""
-        rMsgQueue = msgManager.findQ(msg.mUid)
-        rMsgQueue.put(CloudMessage(msg.mType, msg.mID, MSG_UNIQUE_ID_T_FS_MONITOR, {0: result}))
 
     def stop(self):
         """Stop watch"""
+        super(LinuxFileSysMonitor, self).stop()
         self.notifier.stop()
 
-    def getMsgQueue(self):
-        """Get current thread message queue"""
-        return self.msgQueue
-
-    def regQ(self):
-        """Register its message queue to manager"""
-        msgManager.regQ(MSG_UNIQUE_ID_T_FS_MONITOR, self.msgQueue)
-
-if __name__ == "__main__":
-    fsThread = LinuxFileSysMonitor("Thread-FSMonitor")
-    fsThread.start()
-
-    while True:
-        try:
-            item = msgQueue.get(True, 5)
-            print "[FSMonitor TEST]: %s %s" % (str(item.action), item.filepath)
-        except KeyboardInterrupt:
-            fsThread.stop()
-            break;
-        except Queue.Empty:
-            print "Queue is empty"
-            time.sleep(5)
-
-
+if __name__ == '__main__':
+    f = LinuxFileSysMonitor('FSMonitor-Test')
+    #f.addWatch('D:\\')
+    f.addWatch(os.getcwd())
+    f.start()
+    try:
+        while True:
+            pass
+    except KeyboardInterrupt:
+        print "Press [Ctrl+C]"
+        f.stop()

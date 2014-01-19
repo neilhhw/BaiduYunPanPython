@@ -2,6 +2,7 @@
 #-*- coding: utf-8 -*-
 import threading
 from UniFileSync.lib.common.LogManager import logging
+from UniFileSync.lib.common.ConfManager import ConfManager
 
 class PluginManager(object):
     """Plugin Manager"""
@@ -47,6 +48,13 @@ class PluginManager(object):
     def getAllPlugins(self):
         """get all loaded plugins"""
         return self.__plugin_list
+
+    def loadAllPlugins(self):
+        """load all plugins from destant path"""
+        p_paths = ConfManager.getManager().getPluginPaths()
+        for p in p_paths:
+            logging.debug('loadAllPlugins from %s', p)
+            #TODO: __import__ the module into our script
 
     def debug(self):
         """docstring for test"""
