@@ -1,5 +1,16 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 *-*
-from threading import Thread
+import threading
+
+from UniFileSync.lib.common.FSMonitor import (
+        FileSysMonitor,
+        FILE_CREATE,
+        FILE_DELETE,
+        FILE_MODIFY,
+        FILE_MOVED_FROM,
+        FILE_MOVED_TO)
+
+from UniFileSync.lib.common.LogManager import logging
 
 from pywintypes import OVERLAPPED
 from win32api import CloseHandle
@@ -32,25 +43,14 @@ from win32event import (
     WaitForMultipleObjects,
     WAIT_OBJECT_0)
 
-# map between windows events and pyinotify
-'''ACTIONS = {
-    1: IN_CREATE,
-    2: IN_DELETE,
-    3: IN_MODIFY,
-    4: IN_MOVED_FROM,
-    5: IN_MOVED_TO,
+# map between windows events to common FSMonitor
+ACTIONS = {
+    1: FILE_CREATE,
+    2: FILE_DELETE,
+    3: FILE_MODIFY,
+    4: FILE_MOVED_FROM,
+    5: FILE_MOVED_TO,
 }
-'''
-
-# a map of the actions to names so that we have better logs.
-ACTIONS_NAMES = {
-    1: 'IN_CREATE',
-    2: 'IN_DELETE',
-    3: 'IN_MODIFY',
-    4: 'IN_MOVED_FROM',
-    5: 'IN_MOVED_TO',
-}
-
 
 # constant found in the msdn documentation:
 # http://msdn.microsoft.com/en-us/library/ff538834(v=vs.85).aspx
@@ -66,43 +66,38 @@ FILESYSTEM_MONITOR_MASK = FILE_NOTIFY_CHANGE_FILE_NAME | \
     FILE_NOTIFY_CHANGE_SECURITY | \
     FILE_NOTIFY_CHANGE_LAST_ACCESS
 
-class FileSysMonitor(Thread):
+class WinFileSysMonitor(FileSysMonitor):
     """File system monitor for windows"""
     def __init__(self, name=None):
-        super(FileSysMonitor, self).__init__()
-        if name != None:
-            self.setName(name)
-
-        #self.msgQueue = Queue.Queue()
-        self.mask = FILESYSTEM_MONITOR_MASK
+        super(WinFileSysMonitor, self).__init__(name)
+        self.defaultMask = FILESYSTEM_MONITOR_MASK
         self.buf_size = 0x100
         self.comKey = 0
         self.watchList = []
-        self.watchPath = []
         self.ioComPort = None
         self.overlapped = OVERLAPPED()
         self.overlapped.hEvent = CreateEvent(None, 0, 0, None)
-        self.threadStop = False
+        self.__lock = threading.Lock()
 
     def run(self):
         """Thread entry"""
-        print self.getName()
+        super(WinFileSysMonitor, self).run()
 
         while not self.threadStop:
-            buffers = []
-            for handle in self.watchList:
-                buf = AllocateReadBuffer(self.buf_size)
+
+            self.processMsg(1)
+
+            for watch in self.watchList:
                 ReadDirectoryChangesW(
-                        handle,
-                        buf,
+                        watch['handle'],
+                        watch['buffer'],
                         True,  # Always watch children
-                        self.mask,
+                        watch['mask'],
                         self.overlapped
                         )
-                buffers.append(buf)
 
-            #print 'Thread run @ port 0x%X' % self.ioComPort
             ec, data_len, comKey, overlapped = GetQueuedCompletionStatus(self.ioComPort, 1000)
+            #logging.debug('[%s]: GetQueuedCompletionStatus: error: %d, data length: %d, key %d', self.getName(), ec, data_len, comKey)
             #print "%d %d %d" % (ec, data_len, comKey)
             #print overlapped
             #if not ec:
@@ -110,12 +105,21 @@ class FileSysMonitor(Thread):
             #    break
             # if we continue, it means that we got some data, lets read it
             # lets ead the data and store it in the results
-            events = FILE_NOTIFY_INFORMATION(buffers[comKey], data_len)
+            if ec != 0 or comKey >= len(self.watchList):
+                continue
+
+            #print buffers[comKey]
+            events = FILE_NOTIFY_INFORMATION(self.watchList[comKey]['buffer'], data_len)
+            #print events
             for action, path in events:
-                print "Action: %s Path %s" % (ACTIONS_NAMES[action], self.watchPath[comKey] + '\\' + path)
+                #print '[%s]: action %d, %s' %(self.getName(), action, path)
+                #full_path = self.watchPath[comKey] + '\\' + path
+                self.notify(ACTIONS[action], self.watchList[comKey]['path']+path)
+
 
     def addWatch(self, path, mask=None):
         """Add watcher for path"""
+        super(WinFileSysMonitor, self).addWatch(path, mask)
         handle = CreateFileW(
                 path,
                 FILE_LIST_DIRECTORY,
@@ -125,23 +129,28 @@ class FileSysMonitor(Thread):
                 FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED,
                 None)
 
+        buf = AllocateReadBuffer(self.buf_size)
+        if not mask:
+            mask = self.defaultMask
+        self.__lock.acquire()
         self.ioComPort = CreateIoCompletionPort(handle, self.ioComPort, self.comKey, 0)
-        if mask != None:
-            self.mask = mask
-        self.watchList.append(handle)
-        self.watchPath.append(path)
+        self.watchList.append({'mask': mask, 'path': path, 'handle': handle, 'buffer': buf})
         self.comKey += 1
+        self.__lock.release()
 
     def stop(self):
         """stop current thread"""
-        self.threadStop = True
-        for handle in self.watchList:
-            CloseHandle(handle)
+        super(WinFileSysMonitor, self).stop()
+        for watch in self.watchList:
+            CloseHandle(watch['handle'])
+            self.watchList.remove(watch)
+
 
 if __name__ == '__main__':
-    f = FileSysMonitor('FSMonitor-Test')
-    f.addWatch('D:\\')
-    f.addWatch('C:\\')
+    import os
+    f = WinFileSysMonitor('FSMonitor-Test')
+    #f.addWatch('D:\\')
+    f.addWatch(os.getcwd())
     f.start()
     try:
         while True:
