@@ -114,7 +114,7 @@ class WinFileSysMonitor(FileSysMonitor):
             for action, path in events:
                 #print '[%s]: action %d, %s' %(self.getName(), action, path)
                 #full_path = self.watchPath[comKey] + '\\' + path
-                self.notify(ACTIONS[action], self.watchList[comKey]['path']+path)
+                self.notify(ACTIONS[action], self.watchList[comKey]['path']+'\\'+path)
 
 
     def addWatch(self, path, mask=None):
