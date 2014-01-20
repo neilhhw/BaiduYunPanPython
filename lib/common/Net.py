@@ -14,7 +14,7 @@ __handlers = []
 def register_openers():
     """register some openers into urlib2"""
     #Enable media post, proxy, cookie
-    __handlers = [StreamingHTTPHandler, StreamingHTTPRedirectHandler, StreamingHTTPSHandler, proxyHandler, urllib2.HTTPCookieProcessor]
+    __handlers = [StreamingHTTPHandler, StreamingHTTPRedirectHandler, StreamingHTTPSHandler, urllib2.HTTPCookieProcessor]
     urllib2.install_opener(urllib2.build_opener(*__handlers))
 
 def add_opener(opener):
@@ -45,4 +45,5 @@ def cloud_multi_post(url, param, multi):
     full_url = url + '?' + urllib.urlencode(param)
     datagen, headers = multipart_encode(multi)
     req = urllib2.Request(full_url, datagen, headers)
-    urllib2.urlopen(req)
+    response = urllib2.urlopen(req)
+    return response

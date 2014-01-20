@@ -52,11 +52,13 @@ class SyncActor(threading.Thread):
         """regsiter message queue to manager"""
         MsgBus.getBus().regQ(MSG_UNIQUE_ID_T_SYNC_ACTOR, self.msgQueue)
         MsgBus.getBus().regReceiver(MSG_UNIQUE_ID_T_CONTROLLER, MSG_UNIQUE_ID_T_SYNC_ACTOR)
+        MsgBus.getBus().regReceiver(MSG_UNIQUE_ID_T_FS_MONITOR, MSG_UNIQUE_ID_T_SYNC_ACTOR)
 
     def unregFromMsgBus(self):
         """regsiter message queue to manager"""
         MsgBus.getBus().unregQ(MSG_UNIQUE_ID_T_SYNC_ACTOR)
         MsgBus.getBus().unregReceiver(MSG_UNIQUE_ID_T_CONTROLLER, MSG_UNIQUE_ID_T_SYNC_ACTOR)
+        MsgBus.getBus().unregReceiver(MSG_UNIQUE_ID_T_FS_MONITOR, MSG_UNIQUE_ID_T_SYNC_ACTOR)
 
     def replyMsg(self, msg, result):
         """reply message with result"""
@@ -67,22 +69,13 @@ class SyncActor(threading.Thread):
         """handle file operation"""
         if msg.mID == MSG_ID_T_FILE_CREATE:
             logging.debug('[%s]: Create file: %s', self.getName(), msg.mBody['path'])
-            try:
-                for p in self.pluginManager.getAllPlugins():
-                    p.getAPI().uploadSingleFile(msg.mBody['path'])
-            except urllib2.HTTPError, e:
-                logging.error('[%s]: get HTTP error %s', self.getName(), str(e))
-            finally:
-                pass
+            for p in self.pluginManager.getAllPlugins():
+                print p.getAPI().uploadSingleFile(msg.mBody['path'])
+
         elif msg.mID == MSG_ID_T_FILE_DELETE:
-            print "[%s]: Delete file: %s" % (self.getName(), msg.mBody["path"])
-            try:
-                for p in self.pluginManager.getAllPlugins():
-                    p.getAPI().deleteSingleFile(msg.mBody['path'])
-            except urllib2.HTTPError, e:
-                logging.error('[%s]: get HTTP error %s', self.getName(), str(e))
-            finally:
-                pass
+            logging.debug('[%s]: Delete file: %s', self.getName(), msg.mBody['path'])
+            for p in self.pluginManager.getAllPlugins():
+                print p.getAPI().deleteSingleFile(msg.mBody['path'])
 
         return E_OK
 
