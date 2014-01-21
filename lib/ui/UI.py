@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 import wx
+import threading
+
+from UniFileSync.lib.common.LogManager import logging
+from UniFileSync.lib.common.MsgBus import *
 
 TRAY_TOOLTIP = u'Uni File Sync'
 TRAY_ICON = 'icon.png'
@@ -21,8 +25,6 @@ class ExplorePanel(wx.Panel):
     """docstring for ExplorePanel"""
     def __init__(self, parent):
         super(ExplorePanel, self).__init__(parent)
-
-
 
 class MainTabPanel(wx.Notebook):
     """main tab panel"""
@@ -96,6 +98,30 @@ class UniFileSyncUI(wx.App):
         TaskBarIcon()
         return True
 
+class UniFileSyncUIThread(threading.Thread):
+    """UniFileSync UI thread"""
+    def __init__(self, name):
+        super(UniFileSyncUIThread, self).__init__()
+        if not name:
+            self.setName(name)
+
+    def run(self):
+        """thread entry"""
+        self.app = UniFileSyncUI()
+        self.app.MainLoop()
+
+    def stop(self):
+        """stop GUI thread"""
+        self.app.ExitMainLoop()
+        wx.WakeUpMainThread()
+
 if __name__ == '__main__':
-    app = UniFileSyncUI()
-    app.MainLoop()
+    u = UniFileSyncUIThread('UniFileSyncUI thread Test')
+    u.start()
+
+    try:
+        while True:
+            pass
+    except KeyboardInterrupt:
+        logging.info('[UniFileSyncUIThread Test]: User press Ctrl+C')
+        u.stop()
