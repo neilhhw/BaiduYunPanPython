@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
+import os
+import time
 import threading
 import Queue
 
@@ -41,6 +43,7 @@ class FileSysMonitor(threading.Thread):
         self.msgQueue = Queue.Queue()
         self.threadStop = False
         self.defaultMask = 0
+        self.lastChange = {'action': -1, 'path': '', 'time': time.time()}
 
         self.operTable = {
                 MSG_TYPE_T_FILE: lambda msg : self.handleFile(msg),
@@ -82,6 +85,27 @@ class FileSysMonitor(threading.Thread):
 
     def notify(self, action, path, src_path=None):
         """notify to others who cares about files change"""
+
+        #TODO: need to improve more than delete operation
+        '''
+        #If it is delete action, and last change is the same
+        if action == FILE_DELETE:
+            #We ignore the same action with the same path within some time.
+            if action == self.lastChange['action'] and path == self.lastChange['path']:
+                if self.lastChange['time'] + 3 < time.time():
+                    return False
+        else:
+            if not os.path.exists(path):
+                #For not delete operation, path should exist
+                logging.error('[%s]: notify path:%s not exist any more', self.getName(), path)
+                return False
+
+        #TODO: buffer some modification changes
+        self.lastChange['action'] = action
+        self.lastChange['path'] = path
+        self.lastChange['time'] = time.time()
+        '''
+
         if src_path:
             logging.debug('[%s]: action: %s path: %s, src_path: %s', self.getName(), ACTIONS_NAMES[action], path, src_path)
             mBody = {'path': path, 'action': action, 'src_path': src_path}
@@ -93,6 +117,8 @@ class FileSysMonitor(threading.Thread):
             msgQueue = MsgBus.getBus().findQ(recID)
             if msgQueue:
                 msgQueue.put(CloudMessage(MSG_TYPE_T_FILE, MSG_ID_MAP[action], MSG_UNIQUE_ID_T_FS_MONITOR, mBody))
+
+        return True
 
     def processMsg(self, timeout=None):
         """process message loop for not blocking"""

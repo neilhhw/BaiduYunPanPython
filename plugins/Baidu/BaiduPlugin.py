@@ -7,7 +7,11 @@ import os
 
 from UniFileSync.lib.common.Plugin import Plugin, ClouldAPI
 from UniFileSync.lib.common.LogManager import logging
-from UniFileSync.lib.common.Net import *
+from UniFileSync.lib.common.Net import (
+        cloud_get,
+        cloud_multi_post,
+        cloud_post
+        )
 
 class BaiduPlugin(Plugin):
     """Baidu Cloud Plugin"""
@@ -24,7 +28,6 @@ class BaiduPlugin(Plugin):
         super(BaiduPlugin, self).load()
         self.installAPI(self.api)
         self.api.installConf(self.cf)
-        register_openers()
 
     def unload(self):
         """Baidu Plugin unload"""
@@ -45,6 +48,7 @@ class BaiduCloudAPI(ClouldAPI):
 
     def applyAccess(self):
         """apply baidu access to netdisk"""
+        super(BaiduCloudAPI, self).applyAccess()
         api_url = self.cf.get("BaiduCloud", "openapi_url") + "/device/code"
         param = {"client_id": self.cf.get("BaiduCloud", "api_key"), "response_type": "device_code", "scope": "basic netdisk"}
         logging.debug('[BaiduPlugin]: applyAccess: URL=> %s, API key=> %s', api_url, self.cf.get("BaiduCloud", "api_key"))
@@ -59,6 +63,7 @@ class BaiduCloudAPI(ClouldAPI):
 
     def getToken(self):
         """Get access Token from Baidu API"""
+        super(BaiduCloudAPI, self).getToken()
         api_url = self.cf.get("BaiduCloud", "openapi_url") + "/token"
         logging.debug('[BaiduPlugin]: getToken: URL=>% s', api_url)
         param = {"grant_type": "device_token", "code": self.cf.get("BaiduCloud", "dev_code"),
@@ -85,11 +90,10 @@ class BaiduCloudAPI(ClouldAPI):
 
     def uploadSingleFile(self, filePath, syncPath=None):
         """upload single file to Baidu Yun Pan"""
+        super(BaiduCloudAPI, self).uploadSingleFile(filePath, syncPath)
         param = {'method': 'upload', 'ondup': 'newcopy', 'access_token': self.cf.get("BaiduCloud", "access_token")}
         if syncPath == None:
-            index = filePath.rfind('/')
-            if index != -1:
-                syncPath = filePath[index:]
+            syncPath = filePath
         param['path'] = self.cf.get("BaiduCloud", "app_path") + "/" + syncPath
         fp = open(filePath)
         ret_fp = cloud_multi_post(self.cf.get("BaiduCloud", "upload_url"), param, {'file': fp})
@@ -98,14 +102,15 @@ class BaiduCloudAPI(ClouldAPI):
         fp.close()
         return data
 
-    def downloadSingleFile(self, filePath, syncPath):
+    def downloadSingleFile(self, filePath, syncPath=None):
         """download single file from Baidu Cloud"""
-        pass
+        super(BaiduCloudAPI, self).downloadSingleFile(filePath, syncPath)
 
-    def deleteSingleFile(self, path):
+    def deleteSingleFile(self, filePath, syncPath=None):
         """delete singel file or folder"""
+        super(BaiduCloudAPI, self).deleteSingleFile(filePath, syncPath)
         param = {'method': 'delete', 'access_token': self.cf.get("BaiduCloud", "access_token")}
-        param['path'] = self.cf.get('BaiduCloud', 'app_path') + '/' + path
+        param['path'] = self.cf.get('BaiduCloud', 'app_path') + '/' + filePath
         url = self.cf.get('BaiduCloud', 'pcs_url') + '/file'
         f = cloud_post(url, param)
         data = json.load(f)

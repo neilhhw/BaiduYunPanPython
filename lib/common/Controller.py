@@ -11,6 +11,10 @@ from UniFileSync.lib.common.MsgBus import *
 from UniFileSync.lib.common.SyncActor import SyncActor
 from UniFileSync.lib.common.LogManager import logging
 from UniFileSync.lib.common.PluginManager import PluginManager
+from UniFileSync.lib.common.Net import (
+        register_openers,
+        set_proxy
+        )
 
 if platform.system() == 'Windows':
     from UniFileSync.lib.platform.windows.FSMonitor import WinFileSysMonitor as FileSysMonitor
@@ -52,19 +56,25 @@ class Controller(threading.Thread):
         """thread entry"""
         logging.info('[%s]: is starting', self.getName())
         self.regToMsgBus()
+
+        proxies = {'http': 'http://10.144.1.10:8080', 'https': 'https://10.144.1.10:8080'}
+        set_proxy(proxies)
+        register_openers()
         PluginManager.getManager().loadAllPlugins()
+
         self.sActor = SyncActor("SyncActor")
-        self.fMonitor = FileSysMonitor("FSMonitor")
-        self.fMonitor.addWatch(os.getcwd()+'/conf')
-        self.fMonitor.start()
         self.sActor.start()
+
+        self.fMonitor = FileSysMonitor("FSMonitor")
+        self.fMonitor.addWatch(os.getcwd()+os.sep+'conf')
+        self.fMonitor.start()
 
         while not self.__threadStop:
             try:
                 msg = self.msgQueue.get(True, 2)
                 # Block until get one message
                 if msg != None:
-                    logging.debug('[%s]: receives message ID: %d, Type: %d', self.getName(), msg.mID, msg.mType)
+                    #logging.debug('[%s]: receives message ID: %d, Type: %d', self.getName(), msg.mID, msg.mType)
                     self.operTable[msg.mType](msg)
             except Queue.Empty:
                 pass

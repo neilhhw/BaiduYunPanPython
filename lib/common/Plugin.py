@@ -13,18 +13,16 @@ class Plugin(object):
 
     def load(self):
         """Plugin load"""
-        logging.debug('%s is loading', self.name)
-        return True
+        logging.info('%s is loading', self.name)
 
     def unload(self):
         """Plugin unload"""
-        logging.debug('%s is unloading', self.name)
-        return True
+        logging.info('%s is unloading', self.name)
 
     def active(self):
         """Make plugin active"""
         self.manager.loadPlugin(self)
-        logging.debug(self.name + ' is active')
+        logging.info(self.name + ' is active')
         return True
 
     def getAPI(self):
@@ -46,37 +44,42 @@ class ClouldAPI(object):
     """This is common API for cloud sync
        Plug in should extract this class
     """
-    def __init__(self, name=None):
+    def __init__(self, name):
         super(ClouldAPI, self).__init__()
         self.name = name
 
     def applyAccess(self):
         """docstring for applyAccess"""
-        return True
+        logging.debug('[%s]: applyAccess', self.name)
 
     def getToken(self):
         """docstring for getToken"""
-        return True
+        logging.debug('[%s]: getToken', self.name)
 
     def uploadSingleFile(self, filePath, syncPath=None):
         """upload single file to net disk"""
-        return True
+        logging.debug('[%s]: uploadSingleFile %s', self.name, filePath)
 
     def downloadSingleFile(self, filePath, syncPath=None):
         """download single file from net disk"""
-        return True
+        logging.debug('[%s]: downloadSingleFile %s', self.name, filePath)
 
     def deleteSingleFile(self, filePath, syncPath=None):
         """delete single file from net disk"""
-        return True
+        logging.debug('[%s]: deleteSingleFile %s', self.name, filePath)
 
     def mkdirInCloud(self, dirPath):
         """make dir in net disk"""
-        return True
+        logging.debug('[%s]: mkdirInCloud %s', self.name, dirPath)
 
     def lsInCloud(self, dirPath):
         """list files in dirPath in cloud"""
-        return True
+        logging.debug('[%s]: lsInCloud %s', self.name, dirPath)
+
+    def parseResult(self, data):
+        """parse plugin result"""
+        logging.debug('[%s]: parseResult', self.name)
+
 
 
 

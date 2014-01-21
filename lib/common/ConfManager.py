@@ -17,10 +17,10 @@ class ConfManager(object):
     __parser   = ConfigParser.ConfigParser()
 
     userHome   = os.path.expanduser('~')
-    userPluginPath = userHome + '/.UniFileSync/plugins/'
+    userPluginPath = '%s%s%s%s%s' % (userHome, os.sep, '.UniFileSync', os.sep, 'plugins')
     scriptHome = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-    scripPluginPath = scriptHome + '/plugins/'
-    confPath   = scriptHome+'/conf/'
+    scripPluginPath = '%s%s%s' % (scriptHome, os.sep, 'plugins')
+    confPath   = '%s%s%s' % (scriptHome, os.sep, 'conf')
     confName   = 'UniFileSync.ini'
 
     @staticmethod

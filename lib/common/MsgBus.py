@@ -48,7 +48,7 @@ class MsgBus(object):
     __lock     = threading.Lock()
     __msg_table = {}
     __uni_ID_list = [MSG_UNIQUE_ID_T_CONTROLLER, MSG_UNIQUE_ID_T_SYNC_ACTOR, MSG_UNIQUE_ID_T_FS_MONITOR]
-    __rec_table = {MSG_UNIQUE_ID_T_CONTROLLER: [MSG_UNIQUE_ID_T_SYNC_ACTOR, MSG_UNIQUE_ID_T_SYNC_ACTOR]}
+    __rec_table = {MSG_UNIQUE_ID_T_CONTROLLER: [MSG_UNIQUE_ID_T_SYNC_ACTOR, MSG_UNIQUE_ID_T_FS_MONITOR]}
 
     @staticmethod
     def getBus():

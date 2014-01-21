@@ -61,10 +61,10 @@ class PluginManager(object):
             try:
                 dirs = os.listdir(p)
                 for d in dirs:
-                    tmp = p + d
+                    tmp = '%s%s%s' % (p, os.sep, d)
                     if os.path.isdir(tmp):
                         module_name = 'UniFileSync.plugins.%s' % d
-                        module_path = '%s/%s/%sPlugin.py' % (p, d, d)
+                        module_path = '%s%s%sPlugin.py' % (tmp, os.sep, d)
                         imp.load_source('', module_path)
             except OSError as exc:
                 logging.error('loadAllPlugins listdir error %d', OSError.errno)

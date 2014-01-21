@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
+import os
 import Queue
 import threading
 
@@ -70,14 +71,25 @@ class SyncActor(threading.Thread):
         if msg.mID == MSG_ID_T_FILE_CREATE:
             logging.debug('[%s]: Create file: %s', self.getName(), msg.mBody['path'])
             for p in self.pluginManager.getAllPlugins():
-                print p.getAPI().uploadSingleFile(msg.mBody['path'])
+                filePath = msg.mBody['path']
+                syncPath = self.__getFileName(filePath)
+                logging.info('%s', p.getAPI().uploadSingleFile(filePath, syncPath))
 
         elif msg.mID == MSG_ID_T_FILE_DELETE:
             logging.debug('[%s]: Delete file: %s', self.getName(), msg.mBody['path'])
             for p in self.pluginManager.getAllPlugins():
-                print p.getAPI().deleteSingleFile(msg.mBody['path'])
+                filePath = msg.mBody['path']
+                syncPath = self.__getFileName(filePath)
+                logging.info('%s', p.getAPI().deleteSingleFile(syncPath))
 
         return E_OK
+
+    def __getFileName(self, fullPath):
+        """get file name from full path"""
+        index = fullPath.rfind(os.sep)
+        if index != -1:
+            return fullPath[index+1:]
+        return fullPath
 
     def handleOper(self, msg):
         """handle file operation"""
