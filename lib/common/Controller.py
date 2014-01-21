@@ -66,7 +66,7 @@ class Controller(threading.Thread):
         self.sActor.start()
 
         self.fMonitor = FileSysMonitor("FSMonitor")
-        self.fMonitor.addWatch(os.getcwd()+os.sep+'conf')
+        self.fMonitor.addWatch(os.getcwd()+os.sep+'test')
         self.fMonitor.start()
 
         while not self.__threadStop:
