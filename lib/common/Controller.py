@@ -55,7 +55,7 @@ class Controller(threading.Thread):
         PluginManager.getManager().loadAllPlugins()
         self.sActor = SyncActor("SyncActor")
         self.fMonitor = FileSysMonitor("FSMonitor")
-        self.fMonitor.addWatch(os.getcwd())
+        self.fMonitor.addWatch(os.getcwd()+'/conf')
         self.fMonitor.start()
         self.sActor.start()
 

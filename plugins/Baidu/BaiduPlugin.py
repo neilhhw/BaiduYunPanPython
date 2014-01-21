@@ -3,6 +3,7 @@
 import ConfigParser
 import json
 import webbrowser
+import os
 
 from UniFileSync.lib.common.Plugin import Plugin, ClouldAPI
 from UniFileSync.lib.common.LogManager import logging
@@ -14,18 +15,20 @@ class BaiduPlugin(Plugin):
         super(BaiduPlugin, self).__init__(name)
         self.cf = ConfigParser.ConfigParser()
         self.confName = name + '.ini'
-        self.cf.read(self.confName)
+        dirName = os.path.dirname(__file__)
+        self.cf.read(dirName+'/'+self.confName)
+        self.api = BaiduCloudAPI('BaiduCloudAPI')
 
     def load(self):
         """Baidu Plugin load"""
-        super(BaiduCloudAPI, self).load()
-        self.installAPI(BaiduCloudAPI('BaiduCloudAPI'))
-        self.installConf(self.cf)
+        super(BaiduPlugin, self).load()
+        self.installAPI(self.api)
+        self.api.installConf(self.cf)
         register_openers()
 
     def unload(self):
         """Baidu Plugin unload"""
-        super(BaiduCloudAPI, self).unload()
+        super(BaiduPlugin, self).unload()
         self.uninstallAPI()
         self.cf.write(open(self.confName, 'w'))
 
@@ -84,7 +87,9 @@ class BaiduCloudAPI(ClouldAPI):
         """upload single file to Baidu Yun Pan"""
         param = {'method': 'upload', 'ondup': 'newcopy', 'access_token': self.cf.get("BaiduCloud", "access_token")}
         if syncPath == None:
-            syncPath = filePath
+            index = filePath.rfind('/')
+            if index != -1:
+                syncPath = filePath[index:]
         param['path'] = self.cf.get("BaiduCloud", "app_path") + "/" + syncPath
         fp = open(filePath)
         ret_fp = cloud_multi_post(self.cf.get("BaiduCloud", "upload_url"), param, {'file': fp})
@@ -110,3 +115,4 @@ class BaiduCloudAPI(ClouldAPI):
 
 baiduPlugin = BaiduPlugin('BaiduPlugin')
 baiduPlugin.active()
+#print baiduPlugin.getAPI().getCloudInfo()

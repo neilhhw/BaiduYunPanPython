@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
+import os
+import errno
 import threading
+import imp
 from UniFileSync.lib.common.LogManager import logging
 from UniFileSync.lib.common.ConfManager import ConfManager
 
@@ -55,6 +58,16 @@ class PluginManager(object):
         for p in p_paths:
             logging.debug('loadAllPlugins from %s', p)
             #TODO: __import__ the module into our script
+            try:
+                dirs = os.listdir(p)
+                for d in dirs:
+                    tmp = p + d
+                    if os.path.isdir(tmp):
+                        module_name = 'UniFileSync.plugins.%s' % d
+                        module_path = '%s/%s/%sPlugin.py' % (p, d, d)
+                        imp.load_source('', module_path)
+            except OSError as exc:
+                logging.error('loadAllPlugins listdir error %d', OSError.errno)
 
     def debug(self):
         """docstring for test"""
