@@ -7,6 +7,7 @@ import Queue
 import threading
 import platform
 
+from UniFileSync.lib.common.Error import *
 from UniFileSync.lib.common.MsgBus import *
 from UniFileSync.lib.common.SyncActor import SyncActor
 from UniFileSync.lib.common.LogManager import logging
@@ -26,10 +27,25 @@ else:
 
 class Controller(threading.Thread):
     """UniFileSync Controller"""
-    def __init__(self, name=None):
-        super(Controller, self).__init__()
-        if name:
-            self.setName(name)
+    def __init__():
+        """forbidden for constructor"""
+        logging.error('[Controller]: __init__ is forbidden')
+
+    __instance = None
+    __lock     = threading.Lock()
+
+    @staticmethod
+    def getController():
+        """get controller for Controller thread"""
+        Controller.__lock.acquire()
+        if not Controller.__instance:
+            Controller.__instance = super(Controller, Controller).__new__(Controller)
+            super(Controller, Controller).__init__(Controller.__instance)
+            Controller.__instance.myInit()
+        Controller.__lock.release()
+        return Controller.__instance
+
+    def myInit(self):
         self.msgQueue = Queue.Queue()
         self.__threadStop = False
 
@@ -97,22 +113,22 @@ class Controller(threading.Thread):
 
         if msg.mID == MSG_ID_T_OPER_STOP:
             logging.debug('[%s]: do stop', self.getName())
-            sMsgQueue.put(CloudMessage(MSG_TYPE_T_OPER, MSG_ID_T_OPER_STOP, MSG_UNIQUE_ID_T_CONTROLLER, {}))
-            fMsgQueue.put(CloudMessage(MSG_TYPE_T_OPER, MSG_ID_T_OPER_STOP, MSG_UNIQUE_ID_T_CONTROLLER, {}))
-
-            ack_msg = self.msgQueue.get(True)
-            if ack_msg.mUid == MSG_UNIQUE_ID_T_SYNC_ACTOR and ack_msg.mID == MSG_ID_T_OPER_STOP:
-                if ack_msg.mBody['result'] == E_OK:
-                    logging.debug('[%s]: stop sync actor OK', self.getName())
-                else:
-                    logging.debug('[%s]: stop sync actor NOK=>%d', self.getName(), ack_msg.mBody['result'])
-
-            ack_msg = self.msgQueue.get(True)
-            if ack_msg.mUid == MSG_UNIQUE_ID_T_FS_MONITOR and ack_msg.mID == MSG_ID_T_OPER_STOP:
-                if ack_msg.mBody['result'] == E_OK:
-                    logging.debug('[%s]: stop file system monitor OK', self.getName())
-                else:
-                    logging.debug('[%s]: stop file system monitor NOK=>%d', self.getName(), ack_msg.mBody['result'])
+            if self.sActor.isAlive():
+                sMsgQueue.put(CloudMessage(MSG_TYPE_T_OPER, MSG_ID_T_OPER_STOP, MSG_UNIQUE_ID_T_CONTROLLER, {}))
+                ack_msg = self.msgQueue.get(True)
+                if ack_msg.mUid == MSG_UNIQUE_ID_T_SYNC_ACTOR and ack_msg.mID == MSG_ID_T_OPER_STOP:
+                    if ack_msg.mBody['result'] == E_OK:
+                        logging.debug('[%s]: stop sync actor OK', self.getName())
+                    else:
+                        logging.debug('[%s]: stop sync actor NOK=>%d', self.getName(), ack_msg.mBody['result'])
+            if self.fMonitor.isAlive():
+                fMsgQueue.put(CloudMessage(MSG_TYPE_T_OPER, MSG_ID_T_OPER_STOP, MSG_UNIQUE_ID_T_CONTROLLER, {}))
+                ack_msg = self.msgQueue.get(True)
+                if ack_msg.mUid == MSG_UNIQUE_ID_T_FS_MONITOR and ack_msg.mID == MSG_ID_T_OPER_STOP:
+                    if ack_msg.mBody['result'] == E_OK:
+                        logging.debug('[%s]: stop file system monitor OK', self.getName())
+                    else:
+                        logging.debug('[%s]: stop file system monitor NOK=>%d', self.getName(), ack_msg.mBody['result'])
 
             self.replyMsg(msg, E_OK)
             self.stop()
@@ -123,7 +139,7 @@ class Controller(threading.Thread):
         """reply message with result"""
         rMsgQueue = MsgBus.getBus().findQ(msg.mUid)
         rMsgQueue.put(CloudMessage(msg.mType, msg.mID, MSG_UNIQUE_ID_T_CONTROLLER, {'result': result}))
-        logging.debug('[%s]: replyMsg: ID=>%d, uID=>%d, result=>%d', self.getName(), msg.mID, msg.mUid, result)
+        #logging.debug('[%s]: replyMsg: ID=>%d, uID=>%d, result=>%d', self.getName(), msg.mID, msg.mUid, result)
 
 
     def handleRes(self, msg):
@@ -135,20 +151,62 @@ class Controller(threading.Thread):
         pass
 
 
-if __name__ == '__main__':
-    controller = Controller('UniFileSync Controller')
-    controller.start()
+def start_controller(name):
+    """start controller thread"""
+    c = Controller.getController()
+    if not c.isAlive():
+        c.setName(name)
+        #c.setDaemon(False)
+        c.start()
+        return E_OK
+
+    return E_OK
+
+def stop_controller(param):
+    """stop controller thread"""
     MSG_UNIQUE_ID_T_TEST = 5
     MsgBus.getBus().regUniID(MSG_UNIQUE_ID_T_TEST)
     msgQueue = Queue.Queue()
     MsgBus.getBus().regQ(MSG_UNIQUE_ID_T_TEST, msgQueue)
+    cMsgQueue = MsgBus.getBus().findQ(MSG_UNIQUE_ID_T_CONTROLLER)
+    cMsgQueue.put(CloudMessage(MSG_TYPE_T_OPER, MSG_ID_T_OPER_STOP, MSG_UNIQUE_ID_T_TEST, {}))
+    msg = msgQueue.get(True)
+    return E_OK
+
+
+if __name__ == '__main__':
+    import socket
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind(('localhost', 8089))
+    sock.listen(5)
+
+    actionTable = {
+            'start': lambda param: start_controller(param),
+            'stop':  lambda param: stop_controller(param)
+            }
 
     try:
+        logging.info('[UniFileSync]: start server...')
         while True:
-            pass
+            connection, address = sock.accept()
+            try:
+                connection.settimeout(5)
+                buf = connection.recv(1024)
+                index = buf.find(':')
+                action = buf[0: index]
+                param = buf[index+2: ]
+                logging.debug('[UniFileSync]: action %s, param %s', action, param)
+                if action in actionTable:
+                    res = actionTable[action](param)
+                    connection.send('%s: %s' % ('result', res))
+                    if action == 'stop':
+                        logging.info('[UniFileSync]: stop server...')
+                        break;
+            except socket.timeout:
+                logging.info('[UniFileSync]: socket time out from %s', address)
+                connection.close()
+            except KeyboardInterrupt, e:
+                raise e
     except KeyboardInterrupt:
         logging.info('[UniFileSync Controller]: Press Ctrl+C')
-        cMsgQueue = MsgBus.getBus().findQ(MSG_UNIQUE_ID_T_CONTROLLER)
-        cMsgQueue.put(CloudMessage(MSG_TYPE_T_OPER, MSG_ID_T_OPER_STOP, MSG_UNIQUE_ID_T_TEST, {}))
-        msg = msgQueue.get(True)
-
+        stop_controller()

@@ -56,9 +56,9 @@ class ClouldAPI(object):
         """docstring for getToken"""
         logging.debug('[%s]: getToken', self.name)
 
-    def uploadSingleFile(self, filePath, syncPath=None):
+    def uploadSingleFile(self, filePath, syncPath, isReplace=False):
         """upload single file to net disk"""
-        logging.debug('[%s]: uploadSingleFile %s', self.name, filePath)
+        logging.debug('[%s]: uploadSingleFile %s => %s, is replace? %d', self.name, filePath, syncPath, isReplace)
 
     def downloadSingleFile(self, filePath, syncPath=None):
         """download single file from net disk"""

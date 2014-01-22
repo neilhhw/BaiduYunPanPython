@@ -88,12 +88,13 @@ class BaiduCloudAPI(ClouldAPI):
         f.close()
         return data
 
-    def uploadSingleFile(self, filePath, syncPath=None):
+    def uploadSingleFile(self, filePath, syncPath, isReplace=False):
         """upload single file to Baidu Yun Pan"""
-        super(BaiduCloudAPI, self).uploadSingleFile(filePath, syncPath)
-        param = {'method': 'upload', 'ondup': 'newcopy', 'access_token': self.cf.get("BaiduCloud", "access_token")}
-        if syncPath == None:
-            syncPath = filePath
+        super(BaiduCloudAPI, self).uploadSingleFile(filePath, syncPath, isReplace)
+        onDup = 'newcopy'
+        if isReplace:
+            onDup = 'overwrite'
+        param = {'method': 'upload', 'ondup': onDup, 'access_token': self.cf.get("BaiduCloud", "access_token")}
         param['path'] = self.cf.get("BaiduCloud", "app_path") + "/" + syncPath
         fp = open(filePath)
         ret_fp = cloud_multi_post(self.cf.get("BaiduCloud", "upload_url"), param, {'file': fp})

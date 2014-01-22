@@ -75,6 +75,13 @@ class SyncActor(threading.Thread):
                 syncPath = self.__getFileName(filePath)
                 logging.info('%s', p.getAPI().uploadSingleFile(filePath, syncPath))
 
+        if msg.mID == MSG_ID_T_FILE_MODIFY:
+            logging.debug('[%s]: Modify file: %s', self.getName(), msg.mBody['path'])
+            for p in self.pluginManager.getAllPlugins():
+                filePath = msg.mBody['path']
+                syncPath = self.__getFileName(filePath)
+                logging.info('%s', p.getAPI().uploadSingleFile(filePath, syncPath, True))
+
         elif msg.mID == MSG_ID_T_FILE_DELETE:
             logging.debug('[%s]: Delete file: %s', self.getName(), msg.mBody['path'])
             for p in self.pluginManager.getAllPlugins():
