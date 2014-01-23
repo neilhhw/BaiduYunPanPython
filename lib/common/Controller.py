@@ -6,6 +6,7 @@ import os
 import Queue
 import threading
 import platform
+import json
 
 from UniFileSync.lib.common.Error import *
 from UniFileSync.lib.common.MsgBus import *
@@ -73,8 +74,9 @@ class Controller(threading.Thread):
         logging.info('[%s]: is starting', self.getName())
         self.regToMsgBus()
 
-        proxies = {'http': 'http://10.144.1.10:8080', 'https': 'https://10.144.1.10:8080'}
-        set_proxy(proxies)
+        #proxies = {'http': 'http://10.144.1.10:8080', 'https': 'https://10.144.1.10:8080'}
+        #proxy ={'https': 'https://10.144.1.10:8080'}
+        #set_proxy(proxy)
         register_openers()
         PluginManager.getManager().loadAllPlugins()
 
@@ -151,11 +153,11 @@ class Controller(threading.Thread):
         pass
 
 
-def start_controller(name):
+def start_controller(param):
     """start controller thread"""
     c = Controller.getController()
     if not c.isAlive():
-        c.setName(name)
+        c.setName(param['name'])
         #c.setDaemon(False)
         c.start()
         return E_OK
@@ -164,6 +166,8 @@ def start_controller(name):
 
 def stop_controller(param):
     """stop controller thread"""
+    if Controller.getController() == None or not Controller.getController().isAlive():
+        return E_INVILD_PARAM
     MSG_UNIQUE_ID_T_TEST = 5
     MsgBus.getBus().regUniID(MSG_UNIQUE_ID_T_TEST)
     msgQueue = Queue.Queue()
@@ -171,6 +175,11 @@ def stop_controller(param):
     cMsgQueue = MsgBus.getBus().findQ(MSG_UNIQUE_ID_T_CONTROLLER)
     cMsgQueue.put(CloudMessage(MSG_TYPE_T_OPER, MSG_ID_T_OPER_STOP, MSG_UNIQUE_ID_T_TEST, {}))
     msg = msgQueue.get(True)
+    return E_OK
+
+def proxy_handler(param):
+    """proxy handler"""
+    set_proxy(param)
     return E_OK
 
 
@@ -182,7 +191,8 @@ if __name__ == '__main__':
 
     actionTable = {
             'start': lambda param: start_controller(param),
-            'stop':  lambda param: stop_controller(param)
+            'stop':  lambda param: stop_controller(param),
+            'proxy': lambda param: proxy_handler(param)
             }
 
     try:
@@ -192,14 +202,13 @@ if __name__ == '__main__':
             try:
                 connection.settimeout(5)
                 buf = connection.recv(1024)
-                index = buf.find(':')
-                action = buf[0: index]
-                param = buf[index+2: ]
-                logging.debug('[UniFileSync]: action %s, param %s', action, param)
-                if action in actionTable:
-                    res = actionTable[action](param)
-                    connection.send('%s: %s' % ('result', res))
-                    if action == 'stop':
+                req = json.loads(buf)
+                logging.debug('[UniFileSync]: action %s, param %s', req['cmd'], req['param'])
+                if req['cmd'] in actionTable:
+                    res = actionTable[req['cmd']](req['param'])
+                    d = {'cmd': 'ack', 'param': {}, 'res': res}
+                    connection.send(json.dumps(d))
+                    if req['cmd'] == 'stop':
                         logging.info('[UniFileSync]: stop server...')
                         break;
             except socket.timeout:

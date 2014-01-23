@@ -3,6 +3,7 @@
 import os
 import Queue
 import threading
+import urllib2
 
 from UniFileSync.lib.common.MsgBus import *
 from UniFileSync.lib.common.Error import *
@@ -73,21 +74,33 @@ class SyncActor(threading.Thread):
             for p in self.pluginManager.getAllPlugins():
                 filePath = msg.mBody['path']
                 syncPath = self.__getFileName(filePath)
-                logging.info('%s', p.getAPI().uploadSingleFile(filePath, syncPath))
+                try:
+                    logging.info('%s', p.getAPI().uploadSingleFile(filePath, syncPath))
+                except urllib2.HTTPError as exc:
+                    print exc
+                    pass
 
         if msg.mID == MSG_ID_T_FILE_MODIFY:
             logging.debug('[%s]: Modify file: %s', self.getName(), msg.mBody['path'])
             for p in self.pluginManager.getAllPlugins():
                 filePath = msg.mBody['path']
                 syncPath = self.__getFileName(filePath)
-                logging.info('%s', p.getAPI().uploadSingleFile(filePath, syncPath, True))
+                try:
+                    logging.info('%s', p.getAPI().uploadSingleFile(filePath, syncPath, True))
+                except urllib2.HTTPError as exc:
+                    print exc
+                    pass
 
         elif msg.mID == MSG_ID_T_FILE_DELETE:
             logging.debug('[%s]: Delete file: %s', self.getName(), msg.mBody['path'])
             for p in self.pluginManager.getAllPlugins():
                 filePath = msg.mBody['path']
                 syncPath = self.__getFileName(filePath)
-                logging.info('%s', p.getAPI().deleteSingleFile(syncPath))
+                try:
+                    logging.info('%s', p.getAPI().deleteSingleFile(syncPath))
+                except urllib2.HTTPError as exc:
+                    print exc
+                    pass
 
         return E_OK
 
