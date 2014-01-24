@@ -18,6 +18,7 @@ __lock = threading.Lock()
 def register_openers():
     """register some openers into urlib2"""
     #Enable media post, proxy, cookie
+    logging.debug('%s', __handlers)
     urllib2.install_opener(urllib2.build_opener(*__handlers))
 
 def set_proxy(proxies, **kargs):

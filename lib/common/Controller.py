@@ -57,6 +57,9 @@ class Controller(threading.Thread):
                          MSG_TYPE_T_CONF: lambda msg : self.handleConf(msg)
                          }
 
+        self.sActor = SyncActor("SyncActor")
+        self.fMonitor = FileSysMonitor("FSMonitor")
+
     def regToMsgBus(self):
         """register queue to message bus"""
         MsgBus.getBus().regQ(MSG_UNIQUE_ID_T_CONTROLLER, self.msgQueue)
@@ -80,11 +83,7 @@ class Controller(threading.Thread):
         register_openers()
         PluginManager.getManager().loadAllPlugins()
 
-        self.sActor = SyncActor("SyncActor")
         self.sActor.start()
-
-        self.fMonitor = FileSysMonitor("FSMonitor")
-        self.fMonitor.addWatch(os.getcwd()+os.sep+'test')
         self.fMonitor.start()
 
         while not self.__threadStop:
@@ -136,6 +135,7 @@ class Controller(threading.Thread):
             self.stop()
         elif msg.mID == MSG_ID_T_OPER_ADD_WATCH:
             self.fMonitor.addWatch(msg.mBody['path'], msg.mBody['mask'])
+            self.replyMsg(msg, E_OK)
 
     def replyMsg(self, msg, result):
         """reply message with result"""
@@ -153,37 +153,49 @@ class Controller(threading.Thread):
         pass
 
 
+#============================================================================================================
 def start_controller(param):
     """start controller thread"""
     c = Controller.getController()
     if not c.isAlive():
-        c.setName(param['name'])
+        if param['name']:
+            c.setName(param['name'])
         #c.setDaemon(False)
         c.start()
         return E_OK
-
-    return E_OK
+    return E_PERM
 
 def stop_controller(param):
     """stop controller thread"""
     if Controller.getController() == None or not Controller.getController().isAlive():
         return E_INVILD_PARAM
-    MSG_UNIQUE_ID_T_TEST = 5
-    MsgBus.getBus().regUniID(MSG_UNIQUE_ID_T_TEST)
-    msgQueue = Queue.Queue()
-    MsgBus.getBus().regQ(MSG_UNIQUE_ID_T_TEST, msgQueue)
     cMsgQueue = MsgBus.getBus().findQ(MSG_UNIQUE_ID_T_CONTROLLER)
-    cMsgQueue.put(CloudMessage(MSG_TYPE_T_OPER, MSG_ID_T_OPER_STOP, MSG_UNIQUE_ID_T_TEST, {}))
+    cMsgQueue.put(CloudMessage(MSG_TYPE_T_OPER, MSG_ID_T_OPER_STOP, MSG_UNIQUE_ID_T_SERVER, {}))
     msg = msgQueue.get(True)
-    return E_OK
+    return msg.mBody['result']
 
 def proxy_handler(param):
     """proxy handler"""
     set_proxy(param)
+    register_openers()
     return E_OK
+
+def watch_handler(param):
+    """watch path handler"""
+    cMsgQueue = MsgBus.getBus().findQ(MSG_UNIQUE_ID_T_CONTROLLER)
+    cMsgQueue.put(CloudMessage(MSG_TYPE_T_OPER, MSG_ID_T_OPER_ADD_WATCH, MSG_UNIQUE_ID_T_SERVER, {'path': param['path'], 'mask': None}))
+    msg = msgQueue.get(True)
+    return msg.mBody['result']
 
 
 if __name__ == '__main__':
+    global MSG_UNIQUE_ID_T_SERVER
+    MSG_UNIQUE_ID_T_SERVER = 5
+    MsgBus.getBus().regUniID(MSG_UNIQUE_ID_T_SERVER)
+    global msgQueue
+    msgQueue = Queue.Queue()
+    MsgBus.getBus().regQ(MSG_UNIQUE_ID_T_SERVER, msgQueue)
+
     import socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.bind(('localhost', 8089))
@@ -192,7 +204,8 @@ if __name__ == '__main__':
     actionTable = {
             'start': lambda param: start_controller(param),
             'stop':  lambda param: stop_controller(param),
-            'proxy': lambda param: proxy_handler(param)
+            'proxy': lambda param: proxy_handler(param),
+            'watch': lambda param: watch_handler(param)
             }
 
     try:
@@ -203,12 +216,12 @@ if __name__ == '__main__':
                 connection.settimeout(5)
                 buf = connection.recv(1024)
                 req = json.loads(buf)
-                logging.debug('[UniFileSync]: action %s, param %s', req['cmd'], req['param'])
-                if req['cmd'] in actionTable:
-                    res = actionTable[req['cmd']](req['param'])
-                    d = {'cmd': 'ack', 'param': {}, 'res': res}
+                logging.debug('[UniFileSync]: action %s, param %s', req['action'], req['param'])
+                if req['action'] in actionTable:
+                    res = actionTable[req['action']](req['param'])
+                    d = {'action': req['action'], 'param': {}, 'res': res, 'type': 'ack'}
                     connection.send(json.dumps(d))
-                    if req['cmd'] == 'stop':
+                    if req['action'] == 'stop':
                         logging.info('[UniFileSync]: stop server...')
                         break;
             except socket.timeout:
