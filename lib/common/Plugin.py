@@ -72,9 +72,9 @@ class ClouldAPI(object):
         """make dir in net disk"""
         logging.debug('[%s]: mkdirInCloud %s', self.name, dirPath)
 
-    def lsInCloud(self, dirPath):
-        """list files in dirPath in cloud"""
-        logging.debug('[%s]: lsInCloud %s', self.name, dirPath)
+    def lsInCloud(self, filePath):
+        """list files in filePath in cloud"""
+        logging.debug('[%s]: lsInCloud %s', self.name, filePath)
 
     def parseResult(self, data):
         """parse plugin result"""

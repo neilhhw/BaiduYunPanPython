@@ -187,6 +187,22 @@ def watch_handler(param):
     msg = msgQueue.get(True)
     return msg.mBody['result']
 
+def list_handler(param):
+    """list handler in cloud"""
+    sMsgQueue = MsgBus.getBus().findQ(MSG_UNIQUE_ID_T_SYNC_ACTOR)
+    sMsgQueue.put(CloudMessage(MSG_TYPE_T_FILE, MSG_ID_T_FILE_LIST, MSG_UNIQUE_ID_T_SERVER, {'path': param['path'], 'ack': True}))
+    msg = msgQueue.get(True)
+    return msg.mBody['result']
+
+def sync_handler(param):
+    """sync handler in cloud"""
+    #sMsgQueue = MsgBus.getBus().findQ(MSG_UNIQUE_ID_T_SYNC_ACTOR)
+    #sMsgQueue.put(CloudMessage(MSG_TYPE_T_FILE, MSG_ID_T_FILE_SYNC, MSG_UNIQUE_ID_T_SERVER, {'path': param['path'], 'ack': True}))
+    MsgBus.getBus().send(MSG_UNIQUE_ID_T_SYNC_ACTOR,
+            CloudMessage(MSG_TYPE_T_FILE, MSG_ID_T_FILE_SYNC, MSG_UNIQUE_ID_T_SERVER, {'path': param['path'], 'ack': True}))
+    msg = MsgBus.getBus().wait(MSG_UNIQUE_ID_T_SERVER, MSG_UNIQUE_ID_T_SYNC_ACTOR)
+    return msg.mBody['result']
+
 
 if __name__ == '__main__':
     global MSG_UNIQUE_ID_T_SERVER
@@ -205,7 +221,9 @@ if __name__ == '__main__':
             'start': lambda param: start_controller(param),
             'stop':  lambda param: stop_controller(param),
             'proxy': lambda param: proxy_handler(param),
-            'watch': lambda param: watch_handler(param)
+            'watch': lambda param: watch_handler(param),
+            'list': lambda param: list_handler(param),
+            'sync': lambda param: sync_handler(param)
             }
 
     try:

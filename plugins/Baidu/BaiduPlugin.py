@@ -4,6 +4,8 @@ import ConfigParser
 import json
 import webbrowser
 import os
+import io
+import time
 
 from UniFileSync.lib.common.Plugin import Plugin, ClouldAPI
 from UniFileSync.lib.common.LogManager import logging
@@ -117,6 +119,61 @@ class BaiduCloudAPI(ClouldAPI):
         data = json.load(f)
         f.close()
         return data
+
+    def lsInCloud(self, filePath):
+        """list dir in cloud"""
+        super(BaiduCloudAPI, self).lsInCloud(filePath)
+        param = {'method': 'list', 'access_token': self.cf.get("BaiduCloud", "access_token")}
+        param['path'] = self.cf.get('BaiduCloud', 'app_path') + '/' + filePath
+        url = self.cf.get('BaiduCloud', 'pcs_url') + '/file'
+        f = cloud_post(url, param)
+        data = json.load(f)
+        f.close()
+        return self.parseResult(data)
+
+    def mkdirInCloud(self, dirPath):
+        """make dir in cloud"""
+        super(BaiduCloudAPI, self).mkdirInCloud(dirPath)
+        param = {'method': 'mkdir', 'access_token': self.cf.get('BaiduCloud', 'access_token')}
+        param['path'] = self.cf.get('BaiduCloud', 'app_path') + '/' + dirPath
+        url = self.cf.get('BaiduCloud', 'pcs_url') + '/file'
+        f = cloud_post(url, param)
+        data = json.load(f)
+        f.close()
+        return self.parseResult(data)
+
+
+    def parseResult(self, data):
+        """parse result to make it convient to read"""
+        res = None
+        super(BaiduCloudAPI, self).parseResult(data)
+        if 'list' in data:
+            """
+            Directory of $DIRPATH
+
+            $TIME   <$ISDIR>   $SIZE   $PATH
+
+            """
+            strIO = io.StringIO()
+            files = data['list']
+
+            strIO.write(u'\nDirectory of %s\n' % (self.cf.get('BaiduCloud', 'app_path')))
+            for f in files:
+                mtime = time.ctime(f['mtime'])
+                path = f['path']
+                size = f['size']
+                isdir = f['isdir']
+                if isdir:
+                    strIO.write(u'%s\t%s\t%d\t%s\n' % (mtime, '<DIR>', size, path))
+                else:
+                    strIO.write(u'%s\t\t%d\t%s\n' % (mtime, size, path))
+
+            res = strIO.getvalue()
+            strIO.close()
+        else:
+            res = data
+
+        return res
 
 
 baiduPlugin = BaiduPlugin('BaiduPlugin')

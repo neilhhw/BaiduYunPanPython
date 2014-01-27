@@ -62,13 +62,14 @@ class SyncActor(threading.Thread):
         MsgBus.getBus().unregReceiver(MSG_UNIQUE_ID_T_CONTROLLER, MSG_UNIQUE_ID_T_SYNC_ACTOR)
         MsgBus.getBus().unregReceiver(MSG_UNIQUE_ID_T_FS_MONITOR, MSG_UNIQUE_ID_T_SYNC_ACTOR)
 
-    def replyMsg(self, msg, result):
+    def replyMsg(self, msg, result, **kargs):
         """reply message with result"""
         rMsgQueue = MsgBus.getBus().findQ(msg.mUid)
         rMsgQueue.put(CloudMessage(msg.mType, msg.mID, MSG_UNIQUE_ID_T_SYNC_ACTOR, {'result': result}))
 
     def handleFile(self, msg):
         """handle file operation"""
+        #TODO: improve below codes
         if msg.mID == MSG_ID_T_FILE_CREATE:
             logging.debug('[%s]: Create file: %s', self.getName(), msg.mBody['path'])
             for p in self.pluginManager.getAllPlugins():
@@ -101,6 +102,39 @@ class SyncActor(threading.Thread):
                 except urllib2.HTTPError as exc:
                     print exc
                     pass
+        elif msg.mID == MSG_ID_T_FILE_LIST:
+            logging.debug('[%s]: list path: %s', self.getName(), msg.mBody['path'])
+            results = []
+            for p in self.pluginManager.getAllPlugins():
+                filePath = msg.mBody['path']
+                try:
+                    res = p.getAPI().lsInCloud(filePath)
+                    logging.info('%s', res)
+                    results.append({p.name: res})
+                except urllib2.HTTPError as exc:
+                    print exc
+                    pass
+
+            #TODO: need to improve
+            if 'ack' in msg.mBody:
+                if msg.mBody['ack']:
+                    self.replyMsg(msg, results)
+
+        elif msg.mID == MSG_ID_T_FILE_SYNC:
+            logging.debug('[%s]: sync path: %s', self.getName(), msg.mBody['path'])
+            localDir = msg.mBody['path']
+            filelist = os.listdir(localDir)
+            for p in self.pluginManager.getAllPlugins():
+                for f in filelist:
+                    if os.path.isfile(f):
+                        logging.info('%s', p.getAPI().uploadSingleFile(localDir + os.sep + f, f))
+                    elif os.path.isdir(f):
+                        logging.info('%s', p.getAPI().mkdirInCloud(localDir + os.sep + f, f))
+
+            #TODO: need to improve
+            if 'ack' in msg.mBody:
+                if msg.mBody['ack']:
+                    self.replyMsg(msg, E_OK)
 
         return E_OK
 

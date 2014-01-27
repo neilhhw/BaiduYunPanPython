@@ -13,7 +13,7 @@ from UniFileSync.lib.common.Error import *
     UniFileSyncCLI
 
 
-    action          start, restart, stop, watch, explore,
+    action          start, restart, stop, watch, list, sync
 
     -n --name       thread name
     -p --proxy      specify proxy server
@@ -58,7 +58,7 @@ def handle_params(c):
     elif c.action == 'proxy':
         if c.proxy:
             return {'http': 'http://%s'%(c.proxy), 'https': 'https://%s'%(c.proxy)}
-    elif c.action == 'watch':
+    elif c.action in ('watch', 'list', 'sync'):
         if c.dir:
             return {'path': c.dir}
 
@@ -67,11 +67,11 @@ def main():
     parser = argparse.ArgumentParser(prog='UniFileSyncCLI',
                 description='UniFileSync Command Line Interface',
                 )
-    parser.add_argument('action', nargs='?', help='start, restart, stop, watch, explore')
+    parser.add_argument('action', nargs='?', help='start, restart, stop, watch, sync, list')
 
     parser.add_argument('-n', '--name', nargs='?', help='specify a name')
     parser.add_argument('-p', '--proxy', nargs='?', help='specify proxy server')
-    parser.add_argument('-d', '--dir', nargs='?', help='specify a watch dir')
+    parser.add_argument('-d', '--dir', nargs='?', help='specify a path')
     parser.add_argument('-l', '--load', nargs='?', help='load specify plugin')
     parser.add_argument('-v', '--version', nargs='?', help='version of UniFileSyncCLI')
 
@@ -93,8 +93,15 @@ def main():
     buf = sock.recv(1024)
     r = json.loads(buf)
 
+    if r['param'] != None and r['param'] != {}:
+        print 'Result: %s' % r['param']
+
     if r['action'] == c.action and r['res'] == E_OK:
         print 'Excute successfully'
+    elif r['action'] == c.action and type(r['res']) != int:
+        for res in r['res']:
+            print res
+
     else:
         print 'Excute error %d' % (r['res'])
 
