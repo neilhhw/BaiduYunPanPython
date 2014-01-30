@@ -38,6 +38,7 @@ Header:
     message ID
     receiver UID
     sender  UID
+    need    ack
 Body:
     {
         'XXX': 'XXX'
@@ -61,9 +62,9 @@ class MsgBus(object):
 
     __instance = None
     __lock     = threading.Lock()
-    __msg_table = {}
+    __queue_table = {}
     __uni_ID_list = [MSG_UNIQUE_ID_T_CONTROLLER, MSG_UNIQUE_ID_T_SYNC_ACTOR, MSG_UNIQUE_ID_T_FS_MONITOR]
-    __rec_table = {MSG_UNIQUE_ID_T_CONTROLLER: [MSG_UNIQUE_ID_T_SYNC_ACTOR, MSG_UNIQUE_ID_T_FS_MONITOR]}
+    __lis_table = {MSG_UNIQUE_ID_T_CONTROLLER: [MSG_UNIQUE_ID_T_SYNC_ACTOR, MSG_UNIQUE_ID_T_FS_MONITOR]}
 
     @staticmethod
     def getBus():
@@ -81,13 +82,13 @@ class MsgBus(object):
             logging.error('regQ failure due to no Unique Message ID registered')
             return E_INVILD_PARAM
         MsgBus.__lock.acquire()
-        self.__msg_table[msgUniID] = msgQueue
+        self.__queue_table[msgUniID] = msgQueue
         MsgBus.__lock.release()
         return E_OK
 
     def findQ(self, msgUniID):
         """find msg queue"""
-        return self.__msg_table[msgUniID]
+        return self.__queue_table[msgUniID]
 
     def regUniID(self, msgUniID):
         """register new msg uni ID"""
@@ -102,33 +103,33 @@ class MsgBus(object):
     def unregQ(self, msgUniID):
         """unregister msg queue"""
         MsgBus.__lock.acquire()
-        self.__msg_table[msgUniID] = None
+        self.__queue_table[msgUniID] = None
         self.__uni_ID_list.remove(msgUniID)
         MsgBus.__lock.release()
 
     def regReceiver(self, msgUniID, recMsgUniID):
         """register receiver to related msg unique ID"""
         MsgBus.__lock.acquire()
-        if msgUniID not in self.__rec_table:
-            self.__rec_table[msgUniID] = []
-        if recMsgUniID not in self.__rec_table[msgUniID]:
-            self.__rec_table[msgUniID].append(recMsgUniID)
+        if msgUniID not in self.__lis_table:
+            self.__lis_table[msgUniID] = []
+        if recMsgUniID not in self.__lis_table[msgUniID]:
+            self.__lis_table[msgUniID].append(recMsgUniID)
         MsgBus.__lock.release()
 
     def getReceivers(self, msgUniID):
         """get receivers that needs notify"""
-        if msgUniID not in self.__rec_table:
+        if msgUniID not in self.__lis_table:
             return {}
-        return self.__rec_table[msgUniID]
+        return self.__lis_table[msgUniID]
 
     def unregReceiver(self, msgUniID, recMsgUniID):
         """unregister receiver from related msg unique ID"""
-        if msgUniID not in self.__rec_table:
+        if msgUniID not in self.__lis_table:
             return E_INVILD_PARAM
-        if recMsgUniID not in self.__rec_table[msgUniID]:
+        if recMsgUniID not in self.__lis_table[msgUniID]:
             return E_INVILD_PARAM
         MsgBus.__lock.acquire()
-        self.__rec_table[msgUniID].remove(recMsgUniID)
+        self.__lis_table[msgUniID].remove(recMsgUniID)
         MsgBus.__lock.release()
         return E_OK
 
@@ -154,3 +155,23 @@ class MsgBus(object):
         q = self.findQ(msg.mUid)
         if q:
             q.put(msg)
+
+    def addListener(self, msgUniID, lMsgUniID):
+        """register listener to related msg unique ID"""
+        MsgBus.__lock.acquire()
+        if msgUniID not in self.__lis_table:
+            self.__lis_table[msgUniID] = []
+        if lMsgUniID not in self.__lis_table[msgUniID]:
+            self.__lis_table[msgUniID].append(lMsgUniID)
+        MsgBus.__lock.release()
+
+    def rmListener(self, msgUniID, lMsgUniID):
+        """unregister listener from related msg unique ID"""
+        if msgUniID not in self.__lis_table:
+            return E_INVILD_PARAM
+        if lMsgUniID not in self.__lis_table[msgUniID]:
+            return E_INVILD_PARAM
+        MsgBus.__lock.acquire()
+        self.__lis_table[msgUniID].remove(lMsgUniID)
+        MsgBus.__lock.release()
+        return E_OK

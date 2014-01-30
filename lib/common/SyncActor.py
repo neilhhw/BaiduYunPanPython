@@ -75,10 +75,14 @@ class SyncActor(threading.Thread):
             for p in self.pluginManager.getAllPlugins():
                 filePath = msg.mBody['path']
                 syncPath = self.__getFileName(filePath)
+                isdir = os.path.isdir(filePath)
                 try:
-                    logging.info('%s', p.getAPI().uploadSingleFile(filePath, syncPath))
-                except urllib2.HTTPError as exc:
-                    print exc
+                    if isdir:
+                        logging.info('%s', p.getAPI().mkdirInCloud(syncPath))
+                    else:
+                        logging.info('%s', p.getAPI().uploadSingleFile(filePath, syncPath))
+                except urllib2.HTTPError, e:
+                    logging.error('[%s]: HTTP error %d, result %s',self.getName(), e.code, e.read())
                     pass
 
         if msg.mID == MSG_ID_T_FILE_MODIFY:
@@ -88,8 +92,8 @@ class SyncActor(threading.Thread):
                 syncPath = self.__getFileName(filePath)
                 try:
                     logging.info('%s', p.getAPI().uploadSingleFile(filePath, syncPath, True))
-                except urllib2.HTTPError as exc:
-                    print exc
+                except urllib2.HTTPError, e:
+                    logging.error('[%s]: HTTP error %d, result %s',self.getName(), e.code, e.read())
                     pass
 
         elif msg.mID == MSG_ID_T_FILE_DELETE:
@@ -99,8 +103,8 @@ class SyncActor(threading.Thread):
                 syncPath = self.__getFileName(filePath)
                 try:
                     logging.info('%s', p.getAPI().deleteSingleFile(syncPath))
-                except urllib2.HTTPError as exc:
-                    print exc
+                except urllib2.HTTPError, e:
+                    logging.error('[%s]: HTTP error %d, result %s',self.getName(), e.code, e.read())
                     pass
         elif msg.mID == MSG_ID_T_FILE_LIST:
             logging.debug('[%s]: list path: %s', self.getName(), msg.mBody['path'])
@@ -111,8 +115,8 @@ class SyncActor(threading.Thread):
                     res = p.getAPI().lsInCloud(filePath)
                     logging.info('%s', res)
                     results.append({p.name: res})
-                except urllib2.HTTPError as exc:
-                    print exc
+                except urllib2.HTTPError, e:
+                    logging.error('[%s]: HTTP error %d, result %s',self.getName(), e.code, e.read())
                     pass
 
             #TODO: need to improve
@@ -124,12 +128,20 @@ class SyncActor(threading.Thread):
             logging.debug('[%s]: sync path: %s', self.getName(), msg.mBody['path'])
             localDir = msg.mBody['path']
             filelist = os.listdir(localDir)
-            for p in self.pluginManager.getAllPlugins():
-                for f in filelist:
-                    if os.path.isfile(f):
-                        logging.info('%s', p.getAPI().uploadSingleFile(localDir + os.sep + f, f))
-                    elif os.path.isdir(f):
-                        logging.info('%s', p.getAPI().mkdirInCloud(localDir + os.sep + f, f))
+            #print filelist, self.pluginManager.getAllPlugins()
+            try:
+                for p in self.pluginManager.getAllPlugins():
+                    for f in filelist:
+                        f_path = localDir + os.sep + f
+                        if os.path.isfile(f_path):
+                            logging.debug('[%s]: sync file %s in %s', self.getName(), f, filelist)
+                            logging.info('%s', p.getAPI().uploadSingleFile(f_path, f))
+                        elif os.path.isdir(f_path):
+                            logging.debug('[%s]: sync dir %s in %s', self.getName(), f, filelist)
+                            logging.info('%s', p.getAPI().mkdirInCloud(f))
+            except urllib2.HTTPError, e:
+                logging.error('[%s]: HTTP error %d, result %s',self.getName(), e.code, e.read())
+                pass
 
             #TODO: need to improve
             if 'ack' in msg.mBody:
