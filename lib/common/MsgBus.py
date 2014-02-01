@@ -46,6 +46,108 @@ Body:
 
 """
 
+class UMsgHeader():
+    """message header"""
+    def __init__(self, mtype, mid, rUid, sUid, ack):
+        self.mtype = mType
+        self.mid = mid
+        self.rUid = rUid
+        self.sUid = sUid
+        self.ack = ack
+
+class UMsg():
+    """message for UniFileSync usage"""
+    def __init__(self, mtype = -1, mid = -1, rUid = -1, sUid = -1, ack = False, body = {}):
+        self.header = UMsgHeader(mtype, mid, rUid, sUid, ack)
+        self.body = body
+
+class UMsgBus(object):
+    """Message bus"""
+    def __init__():
+        """Forbid __init__(self)"""
+        pass
+
+    __instance = None
+    __lock     = threading.Lock()
+    __queue_table = {}
+    __uni_ID_list = []
+    __lis_table = {}
+
+    @staticmethod
+    def getBus():
+        """Get Message Bus singlone instance"""
+        UMsgBus.__lock.acquire()
+        if not UMsgBus.__instance:
+            UMsgBus.__instance = super(UMsgBus, UMsgBus).__new__(UMsgBus)
+            super(UMsgBus, UMsgBus).__init__(UMsgBus.__instance)
+        UMsgBus.__lock.release()
+        return UMsgBus.__instance
+
+    def regQ(self, msgUniID, msgQueue):
+        """register msg Queue"""
+        if  msgUniID not in self.__uni_ID_list:
+            logging.error('regQ failure due to no Unique Message ID registered')
+            return E_INVILD_PARAM
+        UMsgBus.__lock.acquire()
+        self.__queue_table[msgUniID] = msgQueue
+        UMsgBus.__lock.release()
+        return E_OK
+
+    def findQ(self, msgUniID):
+        """find msg queue"""
+        return self.__queue_table[msgUniID]
+
+    def regUniID(self, msgUniID):
+        """register new msg uni ID"""
+        if msgUniID not in self.__uni_ID_list:
+            UMsgBus.__lock.acquire()
+            self.__uni_ID_list.append(msgUniID)
+            UMsgBus.__lock.release()
+            return E_OK
+        logging.error('regUniID failure due to Unique Message ID %d already registered', msgUniID)
+        return E_INVILD_PARAM
+
+    def unregQ(self, msgUniID):
+        """unregister msg queue"""
+        UMsgBus.__lock.acquire()
+        self.__queue_table[msgUniID] = None
+        self.__uni_ID_list.remove(msgUniID)
+        UMsgBus.__lock.release()
+
+    def addListener(self, msgUniID, lMsgUniID):
+        """register listener to related msg unique ID"""
+        UMsgBus.__lock.acquire()
+        if msgUniID not in self.__lis_table:
+            self.__lis_table[msgUniID] = []
+        if lMsgUniID not in self.__lis_table[msgUniID]:
+            self.__lis_table[msgUniID].append(lMsgUniID)
+        UMsgBus.__lock.release()
+
+    def rmListener(self, msgUniID, lMsgUniID):
+        """unregister listener from related msg unique ID"""
+        if msgUniID not in self.__lis_table:
+            return E_INVILD_PARAM
+        if lMsgUniID not in self.__lis_table[msgUniID]:
+            return E_INVILD_PARAM
+        UMsgBus.__lock.acquire()
+        self.__lis_table[msgUniID].remove(lMsgUniID)
+        UMsgBus.__lock.release()
+        return E_OK
+
+    def getListeners(self, msgUniID):
+        """get receivers that needs notify"""
+        if msgUniID not in self.__lis_table:
+            return []
+        return self.__lis_table[msgUniID]
+
+    def broadcast(self, msg):
+        """broadcast message to all listeners"""
+        for l in self.getListeners(msg.header.sUid):
+            q = self.findQ(l)
+            if q:
+                q.put(msg)
+
+#==================================================================================
 class CloudMessage():
     """message type for cloud"""
     def __init__(self, mType = None, mID = None, mUid = None, mBody = {}):
@@ -119,7 +221,7 @@ class MsgBus(object):
     def getReceivers(self, msgUniID):
         """get receivers that needs notify"""
         if msgUniID not in self.__lis_table:
-            return {}
+            return []
         return self.__lis_table[msgUniID]
 
     def unregReceiver(self, msgUniID, recMsgUniID):
@@ -156,22 +258,3 @@ class MsgBus(object):
         if q:
             q.put(msg)
 
-    def addListener(self, msgUniID, lMsgUniID):
-        """register listener to related msg unique ID"""
-        MsgBus.__lock.acquire()
-        if msgUniID not in self.__lis_table:
-            self.__lis_table[msgUniID] = []
-        if lMsgUniID not in self.__lis_table[msgUniID]:
-            self.__lis_table[msgUniID].append(lMsgUniID)
-        MsgBus.__lock.release()
-
-    def rmListener(self, msgUniID, lMsgUniID):
-        """unregister listener from related msg unique ID"""
-        if msgUniID not in self.__lis_table:
-            return E_INVILD_PARAM
-        if lMsgUniID not in self.__lis_table[msgUniID]:
-            return E_INVILD_PARAM
-        MsgBus.__lock.acquire()
-        self.__lis_table[msgUniID].remove(lMsgUniID)
-        MsgBus.__lock.release()
-        return E_OK
