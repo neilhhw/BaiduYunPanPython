@@ -25,7 +25,8 @@ MSG_TYPE_T_CONF = 4
 
 #Message Unique ID
 MSG_UNIQUE_ID_T_CONTROLLER      = 0
-MSG_UNIQUE_ID_T_SYNC_ACTOR      = 1
+MSG_UNIQUE_ID_T_SYNC_ACTOR      = 1 #TODO: remove it later
+MSG_UNIQUE_ID_T_CLOUD_ACTOR      = 1
 MSG_UNIQUE_ID_T_FS_MONITOR      = 2
 
 
@@ -49,7 +50,7 @@ Body:
 class UMsgHeader():
     """message header"""
     def __init__(self, mtype, mid, rUid, sUid, ack):
-        self.mtype = mType
+        self.mtype = mtype
         self.mid = mid
         self.rUid = rUid
         self.sUid = sUid
@@ -95,7 +96,9 @@ class UMsgBus(object):
 
     def findQ(self, msgUniID):
         """find msg queue"""
-        return self.__queue_table[msgUniID]
+        if msgUniID in self.__queue_table:
+            return self.__queue_table[msgUniID]
+        return None
 
     def regUniID(self, msgUniID):
         """register new msg uni ID"""
@@ -146,6 +149,14 @@ class UMsgBus(object):
             q = self.findQ(l)
             if q:
                 q.put(msg)
+
+    def send(self, msg):
+        """send message to related msg Queue"""
+        q = self.findQ(msg.header.rUid)
+        if q:
+            q.put(msg)
+
+
 
 #==================================================================================
 class CloudMessage():

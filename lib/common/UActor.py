@@ -17,7 +17,7 @@ class UActor(threading.Thread):
         self.__isRunning = False
         self.__msgUid = -1
         self.__operTable = {}
-        self.__msgBus = MsgBus.getBus()
+        self.__msgBus = UMsgBus.getBus()
         self.__lList = []
 
         if actorName:
@@ -38,6 +38,11 @@ class UActor(threading.Thread):
         """return msg queue"""
         return self.__msgQueue
 
+    @property
+    def msgBus(self):
+        """return current message bus instance"""
+        return self.__msgBus
+
     def run(self):
         """actor entry"""
         logging.debug('[%s]: is running', self.getName())
@@ -56,10 +61,14 @@ class UActor(threading.Thread):
         """add handler for related action in operation table"""
         self.__operTable[action] = handler
 
+    def getHandler(self, action):
+        """get handler for action"""
+        return self.__operTable[action]
+
     def addListener(self, mUid):
         """add listner for target uid"""
         self.__lList.append(mUid)
-        self.__msgBus.addListener(mUid, self.mUid)
+        self.__msgBus.addListener(mUid, self.msgUid)
 
     def msgLoop(self):
         """message loop for processing message"""
@@ -69,16 +78,30 @@ class UActor(threading.Thread):
                 if msg and msg.header.mtype:
                     self.__operTable[msg.header.mtype](msg)
             except Queue.Empty, e:
-                raise e
+                logging.error('[%s]: msgLoop timeout in %d with empty item', self.getName(), timeout)
             finally:
                 pass
 
-    def procMsg(self, timeout=0):
+    def getMsg(self, timeout=0):
         """process message within timeout"""
+        msg = None
         try:
             msg = self.__msgQueue.get(True, timeout)
         except Queue.Empty:
-            logging.error('[%s]: procMsg timeout in %d with empty item', self.getName(), timeout)
+            logging.error('[%s]: getMsg timeout in %d with empty item', self.getName(), timeout)
+        finally:
+            pass
+
+        return msg
+
+    def processMsg(self, timeout=0):
+        """docstring for processMsg"""
+        try:
+            msg = self.__msgQueue.get(True, timeout)
+            if msg and msg.header.mtype:
+                self.__operTable[msg.header.mtype](msg)
+        except Queue.Empty:
+            logging.error('[%s]: processMsg timeout in %d with empty item', self.getName(), timeout)
         finally:
             pass
 
@@ -97,7 +120,7 @@ class UActor(threading.Thread):
 
     def setMsgUid(self, msgUid):
         """set current msg uid"""
-        self.msgUid = msgUid
+        self.__msgUid = msgUid
         self.__msgBus.regUniID(msgUid)
 
     def replyResult(self, msg, result):
