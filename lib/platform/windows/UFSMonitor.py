@@ -2,8 +2,8 @@
 # -*- coding: utf-8 *-*
 import threading
 
-from UniFileSync.lib.common.FSMonitor import (
-        FileSysMonitor,
+from UniFileSync.lib.common.UFSMonitor import (
+        UFSMonitor,
         FILE_CREATE,
         FILE_DELETE,
         FILE_MODIFY,
@@ -58,6 +58,7 @@ FILE_LIST_DIRECTORY = 0x0001
 FILE_NOTIFY_CHANGE_LAST_ACCESS = 0x00000020
 FILE_NOTIFY_CHANGE_CREATION = 0x00000040
 
+#TODO directory delete should be monitored
 FILESYSTEM_MONITOR_MASK = FILE_NOTIFY_CHANGE_FILE_NAME | \
     FILE_NOTIFY_CHANGE_DIR_NAME | \
     FILE_NOTIFY_CHANGE_ATTRIBUTES | \
@@ -66,7 +67,7 @@ FILESYSTEM_MONITOR_MASK = FILE_NOTIFY_CHANGE_FILE_NAME | \
     FILE_NOTIFY_CHANGE_SECURITY | \
     FILE_NOTIFY_CHANGE_LAST_ACCESS
 
-class WinFileSysMonitor(FileSysMonitor):
+class WinFileSysMonitor(UFSMonitor):
     """File system monitor for windows"""
     def __init__(self, name=None):
         super(WinFileSysMonitor, self).__init__(name)
@@ -83,7 +84,7 @@ class WinFileSysMonitor(FileSysMonitor):
         """Thread entry"""
         super(WinFileSysMonitor, self).run()
 
-        while not self.threadStop:
+        while self.isRunning:
 
             self.processMsg(1)
 
@@ -110,15 +111,25 @@ class WinFileSysMonitor(FileSysMonitor):
 
             #print buffers[comKey]
             events = FILE_NOTIFY_INFORMATION(self.watchList[comKey]['buffer'], data_len)
-            print events
+            #print events
+            src_path = ''
+            des_path = ''
             for action, path in events:
                 #print '[%s]: action %d, %s' %(self.getName(), action, path)
                 #full_path = self.watchPath[comKey] + '\\' + path
-                self.notify(ACTIONS[action], self.watchList[comKey]['path']+'\\'+path)
+                if ACTIONS[action] == FILE_MOVED_FROM:
+                    src_path = path
+                elif ACTIONS[action] == FILE_MOVED_TO:
+                    des_path = path
+                    self.notify(ACTIONS[action], self.watchList[comKey]['path'], des_path, src_path)
+                else:
+                    self.notify(ACTIONS[action], self.watchList[comKey]['path'], path)
 
 
     def addWatch(self, path, mask=0):
         """Add watcher for path"""
+        if not mask:
+            mask = self.defaultMask
         super(WinFileSysMonitor, self).addWatch(path, mask)
         handle = CreateFileW(
                 path,
@@ -130,8 +141,6 @@ class WinFileSysMonitor(FileSysMonitor):
                 None)
 
         buf = AllocateReadBuffer(self.buf_size)
-        if not mask:
-            mask = self.defaultMask
         self.__lock.acquire()
         self.ioComPort = CreateIoCompletionPort(handle, self.ioComPort, self.comKey, 0)
         self.watchList.append({'mask': mask, 'path': path, 'handle': handle, 'buffer': buf})
@@ -139,7 +148,7 @@ class WinFileSysMonitor(FileSysMonitor):
         self.__lock.release()
 
     def stop(self):
-        """stop current thread"""
+        """stop current actor"""
         super(WinFileSysMonitor, self).stop()
         for watch in self.watchList:
             CloseHandle(watch['handle'])
@@ -150,7 +159,7 @@ if __name__ == '__main__':
     import os
     f = WinFileSysMonitor('FSMonitor-Test')
     #f.addWatch('D:\\')
-    f.addWatch(os.getcwd())
+    f.addWatch('D:\\MyCode\UniFileSync\\test')
     f.start()
     try:
         while True:

@@ -145,16 +145,21 @@ class UMsgBus(object):
 
     def broadcast(self, msg):
         """broadcast message to all listeners"""
-        for l in self.getListeners(msg.header.sUid):
+        sUid = msg.header.sUid
+        for l in self.getListeners(sUid):
             q = self.findQ(l)
             if q:
                 q.put(msg)
+            else:
+                logging.error('[UMsgBus]: broadcast: find sUid %d listener %d queue failure', msg.header.sUid, l)
 
     def send(self, msg):
         """send message to related msg Queue"""
         q = self.findQ(msg.header.rUid)
         if q:
             q.put(msg)
+        else:
+            logging.error('[UMsgBus]: send: find rUid %d queue failure', msg.header.rUid)
 
 
 

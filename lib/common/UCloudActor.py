@@ -27,6 +27,7 @@ class UCloudActor(UActor):
                 MSG_ID_T_FILE_MKDIR: self.handleFileMkdir,
                 MSG_ID_T_FILE_LIST: self.handleFileList,
                 MSG_ID_T_FILE_SYNC: self.handleFileSync,
+                MSG_ID_T_FILE_RENAME: self.handleFileRename,
                 }
 
     def run(self):
@@ -40,12 +41,14 @@ class UCloudActor(UActor):
         if msg.header.mid not in self.__fileActionTable:
             return E_INVILD_PARAM
         res = self.__fileActionTable[msg.header.mid](msg.body)
-        self.replyResult(msg, res)
+        if msg.header.ack:
+            self.replyResult(msg, res)
 
     def handleOper(self, msg):
         """docstring for handleOper"""
         if msg.header.mid == MSG_ID_T_OPER_STOP:
-            self.replyResult(msg, E_OK)
+            if msg.header.ack:
+                self.replyResult(msg, E_OK)
             self.stop()
 
     def handleFileCreate(self, param):
@@ -77,3 +80,20 @@ class UCloudActor(UActor):
         """docstring for handleFileSync"""
         logging.debug('[%s]: handleFileSync: %s', self.getName(), param['path'])
         return E_OK
+
+    def handleFileRename(self, param):
+        """docstring for handleFileRename"""
+        logging.debug('[%s]: handleFileRename: %s=>%s', self.getName(), param['src_path'], param['path'])
+        filePath = msg.body['path']
+        isdir = param['isdir']
+
+        res = E_OK
+        for p in self.pluginManager.getAllPlugins():
+            if isdir:
+                #res = p.getAPI().mkdirInCloud(path)
+                pass
+            else:
+                #res = p.getAPI().uploadSingleFile(filePath, syncPath)
+                pass
+
+        return res

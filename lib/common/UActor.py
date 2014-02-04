@@ -101,7 +101,8 @@ class UActor(threading.Thread):
             if msg and msg.header.mtype:
                 self.__operTable[msg.header.mtype](msg)
         except Queue.Empty:
-            logging.error('[%s]: processMsg timeout in %d with empty item', self.getName(), timeout)
+            #logging.debug('[%s]: processMsg timeout in %d with empty item', self.getName(), timeout)
+            pass
         finally:
             pass
 
@@ -126,13 +127,11 @@ class UActor(threading.Thread):
     def replyResult(self, msg, result):
         """common reply result method"""
         rUid = msg.header.sUid
-        sUid = self.__msgUid
-        msg.header.sUid = sUid
-        msg.header.rUid = rUid
-        msg.body = {'result': result}
+        rmsg = self.initMsg(msg.header.mtype, msg.header.mid, rUid)
+        rmsg.body = {'result': result}
 
         logging.debug('[%s]: replyResult to Uid %d with result %s', self.getName(), rUid, result)
-        self.__msgBus.send(msg)
+        self.__msgBus.send(rmsg)
 
     def notifyListeners(self, msg):
         """notify listeners for what occurs"""
@@ -141,3 +140,4 @@ class UActor(threading.Thread):
             self.__msgBus.broadcast(msg)
         else:
             self.__msgBus.send(msg)
+

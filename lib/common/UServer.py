@@ -2,12 +2,19 @@
 #-*- coding:utf-8 -*-
 import socket
 import json
+import platform
 
 from UniFileSync.lib.common.MsgBus import *
 from UniFileSync.lib.common.UActor import UActor
 from UniFileSync.lib.common.LogManager import logging
 from UniFileSync.lib.common.UCloudActor import UCloudActor
 
+if platform.system() == 'Windows':
+    from UniFileSync.lib.platform.windows.UFSMonitor import WinFileSysMonitor as FileSysMonitor
+elif platform.system() == 'Linux':
+    from UniFileSync.lib.platform.linux.UFSMonitor import LinuxFileSysMonitor as FileSysMonitor
+else:
+    pass
 
 class UServer(UActor):
     """UniFileSync server"""
@@ -15,8 +22,7 @@ class UServer(UActor):
         super(UServer, self).__init__(name)
         self.setMsgUid(MSG_UNIQUE_ID_T_CONTROLLER)
 
-        self.addListener(MSG_UNIQUE_ID_T_FS_MONITOR)
-        self.addListener(MSG_UNIQUE_ID_T_CLOUD_ACTOR)
+        #self.addListener(MSG_UNIQUE_ID_T_CLOUD_ACTOR)
 
         self.addHandler('start', self.startHandler)
         self.addHandler('stop', self.stopHandler)
@@ -28,20 +34,27 @@ class UServer(UActor):
         self.__startActors = []
 
         self.cActor = UCloudActor('Cloud Actor')
+        self.fsMonitor = FileSysMonitor('File Sys Monitor')
 
 
     def startHandler(self, param):
         """start handler for actors"""
         logging.debug('[%s]: startHandler with parm %s', self.getName(), param);
 
-        name = param['name'].lower()
+        if param['name']:
+            name = param['name'].lower()
+        else:
+            name = ''
         res = E_OK
 
         if name == 'all' or name == '':
             self.cActor.start()
             self.__startActors.append(self.cActor)
+            self.fsMonitor.start()
+            self.__startActors.append(self.fsMonitor)
         elif name == 'monitor':
-            pass
+            self.fsMonitor.start()
+            self.__startActors.append(self.fsMonitor)
         elif name == 'cloud':
             self.cActor.start()
             self.__startActors.append(self.cActor)
@@ -55,7 +68,10 @@ class UServer(UActor):
         """stop handler for actors"""
         logging.debug('[%s]: stopHandler with parm %s', self.getName(), param);
 
-        name = param['name'].lower()
+        if param['name']:
+            name = param['name'].lower()
+        else:
+            name = ''
         res = E_OK
 
         if name == 'all' or name == '':
@@ -68,10 +84,23 @@ class UServer(UActor):
                 if rmsg and rmsg.body['result'] != E_OK:
                     res = rmsg.body['result']
 
+            logging.info('[UniFileSync]: stop server...')
+            self.stop()
         elif name == 'monitor':
             msg = self.initMsg(MSG_TYPE_T_OPER, MSG_ID_T_OPER_STOP, MSG_UNIQUE_ID_T_FS_MONITOR, True)
+            self.msgBus.send(msg)
+            rmsg = self.getMsg(2)
+            if rmsg and rmsg.body['result'] != E_OK:
+                res = rmsg.body['result']
         elif name == 'cloud':
             msg = self.initMsg(MSG_TYPE_T_OPER, MSG_ID_T_OPER_STOP, MSG_UNIQUE_ID_T_CLOUD_ACTOR, True)
+            self.msgBus.send(msg)
+            rmsg = self.getMsg(2)
+            if rmsg and rmsg.body['result'] != E_OK:
+                res = rmsg.body['result']
+        elif name == 'server':
+            logging.info('[UniFileSync]: stop server...')
+            self.stop()
         else:
             logging.error('[%s]: stopHandler with name %s error', self.getName(), param['name'])
             res = E_INVILD_PARAM
@@ -120,9 +149,6 @@ class UServer(UActor):
                 res = self.getHandler(req['action'])(req['param'])
                 ret = {'action': req['action'], 'param': {}, 'res': res, 'type': 'ack'}
                 conn.send(json.dumps(ret))
-                if req['action'] == 'stop':
-                    logging.info('[UniFileSync]: stop server...')
-                    self.stop()
             except socket.timeout:
                 logging.info('[UniFileSync]: socket time out from %s', addr)
                 conn.close()
