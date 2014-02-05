@@ -49,6 +49,14 @@ class UFSMonitor(UActor):
             if msg.header.ack:
                 self.replyResult(msg, E_OK)
             self.stop()
+        elif msg.header.mid == MSG_ID_T_OPER_ADD_WATCH:
+            if 'mask' not in msg.body:
+                self.addWatch(msg.body['path'])
+            else:
+                self.addWatch(msg.body['path'], msg.body['mask'])
+
+            if msg.header.ack:
+                self.replyResult(msg, E_OK)
 
     def addWatch(self, path, mask=0):
         """add watch path"""

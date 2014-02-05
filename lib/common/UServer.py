@@ -8,6 +8,7 @@ from UniFileSync.lib.common.MsgBus import *
 from UniFileSync.lib.common.UActor import UActor
 from UniFileSync.lib.common.LogManager import logging
 from UniFileSync.lib.common.UCloudActor import UCloudActor
+from UniFileSync.lib.common.Net import set_proxy
 
 if platform.system() == 'Windows':
     from UniFileSync.lib.platform.windows.UFSMonitor import WinFileSysMonitor as FileSysMonitor
@@ -110,14 +111,34 @@ class UServer(UActor):
     def proxyHandler(self, param):
         """proxy handler for actors"""
         logging.debug('[%s]: proxyHandler with parm %s', self.getName(), param);
+        res = E_OK
+        set_proxy(param)
+        return res
 
     def watchHandler(self, param):
         """watch handler for actors"""
         logging.debug('[%s]: watchHandler with parm %s', self.getName(), param);
+        msg = self.initMsg(MSG_TYPE_T_OPER, MSG_ID_T_OPER_ADD_WATCH, MSG_UNIQUE_ID_T_FS_MONITOR, True)
+        msg.body = param
+        self.msgBus.send(msg)
+        rmsg = self.getMsg(2)
+        if rmsg and rmsg.body['result'] != E_OK:
+            res = rmsg.body['result']
+        return res
 
     def listHandler(self, param):
         """list handler for actors"""
         logging.debug('[%s]: listHandler with parm %s', self.getName(), param);
+        msg = self.initMsg(MSG_TYPE_T_FILE, MSG_ID_T_FILE_LIST, MSG_UNIQUE_ID_T_CLOUD_ACTOR, True)
+        msg.body = param
+        self.msgBus.send(msg)
+        rmsg = self.getMsg(2)
+        res = E_OK
+        data = None
+        if rmsg and rmsg.body['result'] != E_OK:
+            res = rmsg.body['result']
+            data = rmsg.body['data']
+        return res, data
 
     def syncHandler(self, param):
         """sync handler for actors"""
@@ -146,8 +167,8 @@ class UServer(UActor):
                 buf = conn.recv(1024) #TODO: should be also in ConfManager
                 req = json.loads(buf)
                 logging.debug('[UniFileSync]: action %s, param %s', req['action'], req['param'])
-                res = self.getHandler(req['action'])(req['param'])
-                ret = {'action': req['action'], 'param': {}, 'res': res, 'type': 'ack'}
+                res, data = self.getHandler(req['action'])(req['param'])
+                ret = {'action': req['action'], 'param': {'data': data}, 'res': res, 'type': 'ack'}
                 conn.send(json.dumps(ret))
             except socket.timeout:
                 logging.info('[UniFileSync]: socket time out from %s', addr)

@@ -40,9 +40,7 @@ class UCloudActor(UActor):
         """docstring for handleFile"""
         if msg.header.mid not in self.__fileActionTable:
             return E_INVILD_PARAM
-        res = self.__fileActionTable[msg.header.mid](msg.body)
-        if msg.header.ack:
-            self.replyResult(msg, res)
+        self.__fileActionTable[msg.header.mid](msg)
 
     def handleOper(self, msg):
         """docstring for handleOper"""
@@ -51,41 +49,49 @@ class UCloudActor(UActor):
                 self.replyResult(msg, E_OK)
             self.stop()
 
-    def handleFileCreate(self, param):
+    def handleFileCreate(self, msg):
         """docstring for handleFileDelete"""
-        logging.debug('[%s]: handleFileCreate: %s, watch dir %s', self.getName(), param['path'], param['watch_dir'])
+        logging.debug('[%s]: handleFileCreate: %s, watch dir %s', self.getName(), msg.body['path'], msg.body['watch_dir'])
         pass
 
-    def handleFileDelete(self, param):
+    def handleFileDelete(self, msg):
         """docstring for handleFileDelete"""
-        logging.debug('[%s]: handleFileDelete: %s, watch dir %s', self.getName(), param['path'], param['watch_dir'])
+        logging.debug('[%s]: handleFileDelete: %s, watch dir %s', self.getName(), msg.body['path'], msg.body['watch_dir'])
         pass
 
-    def handleFileModify(self, param):
+    def handleFileModify(self, msg):
         """docstring for handleFileModify"""
-        logging.debug('[%s]: handleFileModify: %s, watch dir %s', self.getName(), param['path'], param['watch_dir'])
+        logging.debug('[%s]: handleFileModify: %s, watch dir %s', self.getName(), msg.body['path'], msg.body['watch_dir'])
         pass
 
-    def handleFileMkdir(self, param):
+    def handleFileMkdir(self, msg):
         """docstring for handleFileMkdir"""
-        logging.debug('[%s]: handleFileMkdir: %s', self.getName(), param['dir_path'])
+        logging.debug('[%s]: handleFileMkdir: %s', self.getName(), msg.body['dir_path'])
         pass
 
-    def handleFileList(self, param):
+    def handleFileList(self, msg):
         """docstring for handleFileList"""
-        logging.debug('[%s]: handleFileList: %s', self.getName(), param['path'])
-        pass
+        logging.debug('[%s]: handleFileList: %s', self.getName(), msg.body['path'])
+        res = E_OK
+        data = None
 
-    def handleFileSync(self, param):
+        for p in self.pluginManager.getAllPlugins():
+            res, data = p.getAPI().lsInCloud(msg.body['path'])
+
+        if msg.header.ack:
+            self.replyResult(msg, res)
+        return res, data
+
+    def handleFileSync(self, msg):
         """docstring for handleFileSync"""
-        logging.debug('[%s]: handleFileSync: %s', self.getName(), param['path'])
+        logging.debug('[%s]: handleFileSync: %s', self.getName(), msg.body['path'])
         return E_OK
 
-    def handleFileRename(self, param):
+    def handleFileRename(self, msg):
         """docstring for handleFileRename"""
-        logging.debug('[%s]: handleFileRename: %s=>%s', self.getName(), param['src_path'], param['path'])
+        logging.debug('[%s]: handleFileRename: %s=>%s', self.getName(), msg.body['src_path'], msg.body['path'])
         filePath = msg.body['path']
-        isdir = param['isdir']
+        isdir = msg.body['isdir']
 
         res = E_OK
         for p in self.pluginManager.getAllPlugins():
@@ -96,4 +102,6 @@ class UCloudActor(UActor):
                 #res = p.getAPI().uploadSingleFile(filePath, syncPath)
                 pass
 
+        if msg.header.ack:
+            self.replyResult(msg, res)
         return res
