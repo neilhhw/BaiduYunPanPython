@@ -76,10 +76,11 @@ class UCloudActor(UActor):
         data = None
 
         for p in self.pluginManager.getAllPlugins():
-            res, data = p.getAPI().lsInCloud(msg.body['path'])
+            res, d = p.getAPI().lsInCloud(msg.body['path'])
 
         if msg.header.ack:
-            self.replyResult(msg, res)
+            self.replyResult(msg, res, data=d)
+
         return res, data
 
     def handleFileSync(self, msg):

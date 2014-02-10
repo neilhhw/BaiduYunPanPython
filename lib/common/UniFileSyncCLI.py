@@ -94,14 +94,17 @@ def main():
     r = json.loads(buf)
 
     if r['param'] != None and r['param'] != {}:
-        print 'Result: %s' % r['param']
+        if 'data' in r['param']:
+            if r['param']['data']:
+                print r['param']['data']
+        else:
+            pass
 
     if r['action'] == c.action and r['res'] == E_OK:
         print 'Excute successfully'
     elif r['action'] == c.action and type(r['res']) != int:
         for res in r['res']:
             print res
-
     else:
         print 'Excute error %d' % (r['res'])
 

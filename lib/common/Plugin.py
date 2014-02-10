@@ -13,11 +13,11 @@ class Plugin(object):
 
     def load(self):
         """Plugin load"""
-        logging.info('%s is loading', self.name)
+        logging.info('[%s] is loading', self.name)
 
     def unload(self):
         """Plugin unload"""
-        logging.info('%s is unloading', self.name)
+        logging.info('[%s] is unloading', self.name)
 
     def active(self):
         """Make plugin active"""
@@ -56,6 +56,10 @@ class ClouldAPI(object):
         """docstring for getToken"""
         logging.debug('[%s]: getToken', self.name)
 
+    def refreshToken(self):
+        """refresh token method"""
+        logging.debug('[%s]: refreshToken', self.name)
+
     def uploadSingleFile(self, filePath, syncPath, isReplace=False):
         """upload single file to net disk"""
         logging.debug('[%s]: uploadSingleFile %s => %s, is replace? %d', self.name, filePath, syncPath, isReplace)
@@ -78,8 +82,13 @@ class ClouldAPI(object):
 
     def parseResult(self, data):
         """parse plugin result"""
-        logging.debug('[%s]: parseResult', self.name)
+        logging.debug('[%s]: parseResult...', self.name)
 
+    def errorHandler(self, error):
+        """error handler"""
+        logging.debug('[%s]: errorHandler error\n%s', self.name, error)
 
-
+    def getName(self):
+        """get API name"""
+        return self.name
 

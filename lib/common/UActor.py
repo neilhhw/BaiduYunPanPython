@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
+import inspect
 import Queue
 import threading
 
@@ -42,6 +43,18 @@ class UActor(threading.Thread):
     def msgBus(self):
         """return current message bus instance"""
         return self.__msgBus
+
+    @property
+    def line(self):
+        """current line of current actor"""
+        caller = inspect.stack()[1]
+        return int(caller[2])
+
+    @property
+    def func(self):
+        """current function of current actor"""
+        caller = inspect.stack()[1]
+        return caller[3]
 
     def run(self):
         """actor entry"""
@@ -124,13 +137,17 @@ class UActor(threading.Thread):
         self.__msgUid = msgUid
         self.__msgBus.regUniID(msgUid)
 
-    def replyResult(self, msg, result):
+    def replyResult(self, msg, result, **kargs):
         """common reply result method"""
         rUid = msg.header.sUid
         rmsg = self.initMsg(msg.header.mtype, msg.header.mid, rUid)
         rmsg.body = {'result': result}
 
-        logging.debug('[%s]: replyResult to Uid %d with result %s', self.getName(), rUid, result)
+        for k, v in kargs.iteritems():
+            #logging.debug('[%s]: k=>%s v=>%s', self.getName(), k, v)
+            rmsg.body[k] = v
+
+        logging.debug('[%s]: replyResult to Uid %d with result %s, body\n%s', self.getName(), rUid, result, rmsg.body)
         self.__msgBus.send(rmsg)
 
     def notifyListeners(self, msg):

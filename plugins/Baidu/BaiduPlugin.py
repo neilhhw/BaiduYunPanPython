@@ -6,6 +6,7 @@ import webbrowser
 import os
 import io
 import time
+import urllib2
 
 from UniFileSync.lib.common.Plugin import Plugin, ClouldAPI
 from UniFileSync.lib.common.LogManager import logging
@@ -15,27 +16,29 @@ from UniFileSync.lib.common.Net import (
         cloud_post
         )
 
+from UniFileSync.lib.common.Error import *
+
 class BaiduPlugin(Plugin):
     """Baidu Cloud Plugin"""
     def __init__(self, name):
         super(BaiduPlugin, self).__init__(name)
         self.cf = ConfigParser.ConfigParser()
         self.confName = name + '.ini'
-        dirName = os.path.dirname(__file__)
-        self.cf.read(dirName+'/'+self.confName)
+        self.dirName = os.path.dirname(__file__)
         self.api = BaiduCloudAPI('BaiduCloudAPI')
 
     def load(self):
         """Baidu Plugin load"""
         super(BaiduPlugin, self).load()
         self.installAPI(self.api)
+        self.cf.read(self.dirName+os.sep+self.confName)
         self.api.installConf(self.cf)
 
     def unload(self):
         """Baidu Plugin unload"""
         super(BaiduPlugin, self).unload()
         self.uninstallAPI()
-        self.cf.write(open(self.confName, 'w'))
+        self.cf.write(open(self.dirName+os.sep+self.confName, 'w'))
 
 
 class BaiduCloudAPI(ClouldAPI):
@@ -82,6 +85,36 @@ class BaiduCloudAPI(ClouldAPI):
         self.cf.set("BaiduCloud", "session_secret", data["session_secret"])
         self.cf.set("BaiduCloud", "scope", data["scope"])
 
+    def refreshToken(self):
+        """Refresh access token"""
+        super(BaiduCloudAPI, self).refreshToken()
+        api_url = self.cf.get("BaiduCloud", "openapi_url") + "/token"
+        logging.debug('[BaiduPlugin]: refreshToken: URL=>% s', api_url)
+        param = {"grant_type": "refresh_token", "refresh_token": self.cf.get("BaiduCloud", "refresh_token"),
+                 "client_id": self.cf.get("BaiduCloud", "api_key"),
+                 "client_secret": self.cf.get("BaiduCloud", "secret_key")}
+        try:
+            ret_fp = cloud_post(api_url, param)
+            data = json.load(ret_fp)
+
+            logging.debug('[BaiduPlugin]: getToken: access_token=>%s, refresh_token=>%s', data["access_token"], data["refresh_token"])
+
+            self.cf.set("BaiduCloud", "access_token", data["access_token"])
+            self.cf.set("BaiduCloud", "refresh_token", data["refresh_token"])
+            self.cf.set("BaiduCloud", "session_key", data["session_key"])
+            self.cf.set("BaiduCloud", "session_secret", data["session_secret"])
+            self.cf.set("BaiduCloud", "scope", data["scope"])
+
+            ret_fp.close()
+        except ValueError, e:
+            logging.error('[%s]: refreshToken JSON load error %s', e)
+        except urllib2.HTTPError, e:
+            emsg = e.read()
+            logging.error('[%s]: HTTP error=>%d, result=>%s', self.getName(), e.code, emsg)
+            edata = json.loads(emsg)
+            error = {'http': e.code, 'code': edata['error']}
+            self.errorHandler(error)
+
     def getCloudInfo(self):
         url = self.cf.get("BaiduCloud", "pcs_url") + "/quota"
         param = {"method": "info", "access_token": self.cf.get("BaiduCloud", "access_token")}
@@ -126,10 +159,25 @@ class BaiduCloudAPI(ClouldAPI):
         param = {'method': 'list', 'access_token': self.cf.get("BaiduCloud", "access_token")}
         param['path'] = self.cf.get('BaiduCloud', 'app_path') + '/' + filePath
         url = self.cf.get('BaiduCloud', 'pcs_url') + '/file'
-        f = cloud_post(url, param)
-        data = json.load(f)
-        f.close()
-        return self.parseResult(data)
+        data = {}
+        res = E_OK
+        try:
+            f = cloud_post(url, param)
+            data = json.load(f)
+            #logging.debug('[%s]: data %s', self.getName(), data)
+            f.close()
+        except urllib2.HTTPError, e:
+            emsg = e.read()
+            logging.error('[%s]: HTTP error=>%d, result=>%s', self.getName(), e.code, emsg)
+            edata = json.loads(emsg)
+            error = {'http': e.code, 'code': edata['error_code']}
+            self.errorHandler(error)
+            res = E_API_ERR
+        except ValueError, e:
+            logging.error('[%s]: lsInCloud JSON load error %s', e)
+            res = E_VALUE_ERR
+
+        return res, self.parseResult(data)
 
     def mkdirInCloud(self, dirPath):
         """make dir in cloud"""
@@ -142,11 +190,10 @@ class BaiduCloudAPI(ClouldAPI):
         f.close()
         return self.parseResult(data)
 
-
     def parseResult(self, data):
         """parse result to make it convient to read"""
-        res = None
         super(BaiduCloudAPI, self).parseResult(data)
+        res = None
         if 'list' in data:
             """
             Directory of $DIRPATH
@@ -170,10 +217,29 @@ class BaiduCloudAPI(ClouldAPI):
 
             res = strIO.getvalue()
             strIO.close()
+            logging.debug('[%s]: File list result\n%s', self.getName(), res)
         else:
             res = data
 
         return res
+
+    def errorHandler(self, error):
+        """docstring for errorHandler"""
+        super(BaiduCloudAPI, self).errorHandler(error)
+        if error['http'] == 401:
+            if error['code'] == 111:
+                #This is access token expires
+                self.refreshToken()
+            elif error['code'] == 110:
+                #This is access token invaid
+                pass
+        elif error['http'] == 400:
+            if error['code'] == 'invalid_grant':
+                #Get or refresh token error
+                pass
+            elif error['code'] == 'expired_token':
+                #Token expired
+                pass
 
 
 baiduPlugin = BaiduPlugin('BaiduPlugin')

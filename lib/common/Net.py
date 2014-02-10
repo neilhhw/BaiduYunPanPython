@@ -8,6 +8,7 @@ from poster.encode import multipart_encode
 from poster.streaminghttp import StreamingHTTPHandler, StreamingHTTPRedirectHandler, StreamingHTTPSHandler
 
 from UniFileSync.lib.common.LogManager import logging
+from UniFileSync.lib.common.Error import *
 
 #proxyHandler = urllib2.ProxyHandler({'http': 'http://10.144.1.10:8080', 'https': 'https://10.144.1.10:8080'})
 
@@ -19,7 +20,14 @@ def register_openers():
     """register some openers into urlib2"""
     #Enable media post, proxy, cookie
     #logging.debug('%s', __handlers)
-    urllib2.install_opener(urllib2.build_opener(*__handlers))
+    res = E_OK
+    try:
+        urllib2.install_opener(urllib2.build_opener(*__handlers))
+    except Exception, e:
+        logging.error('[register_openers]: exception occurs %s', e)
+        res = E_OPEN_FAIL
+    finally:
+        return res
 
 def set_proxy(proxies, **kargs):
     """set proxy for global usage"""
@@ -28,6 +36,7 @@ def set_proxy(proxies, **kargs):
     __lock.acquire()
     __handlers.append(proxyHandler)
     __lock.release()
+    return register_openers()
 
 def cloud_get(url, param):
     """common cloud get method"""

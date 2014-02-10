@@ -69,6 +69,11 @@ class PluginManager(object):
             except OSError as exc:
                 logging.error('loadAllPlugins listdir error %d', OSError.errno)
 
+    def unloadAllPlugins(self):
+        """unload all plugins"""
+        for p in self.__plugin_list:
+            p.unload()
+
     def debug(self):
         """docstring for test"""
         for p in self.__plugin_list:
