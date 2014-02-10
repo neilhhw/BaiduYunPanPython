@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
+import os
 from UniFileSync.lib.common.MsgBus import *
 from UniFileSync.lib.common.Error import *
 
@@ -52,7 +53,18 @@ class UCloudActor(UActor):
     def handleFileCreate(self, msg):
         """docstring for handleFileDelete"""
         logging.debug('[%s]: handleFileCreate: %s, watch dir %s', self.getName(), msg.body['path'], msg.body['watch_dir'])
-        pass
+
+        res = E_API_ERR
+        syncPath = msg.body['path']
+        if msg.body['watch_dir'] == "":
+            filePath = syncPath
+        filePath = msg.body['watch_dir'] + os.sep +msg.body['path']
+
+        for p in self.pluginManager.getAllPlugins():
+            res = p.getAPI().uploadSingleFile(filePath, syncPath)
+
+        if msg.header.ack:
+            self.replyResult(msg, res)
 
     def handleFileDelete(self, msg):
         """docstring for handleFileDelete"""
@@ -62,7 +74,18 @@ class UCloudActor(UActor):
     def handleFileModify(self, msg):
         """docstring for handleFileModify"""
         logging.debug('[%s]: handleFileModify: %s, watch dir %s', self.getName(), msg.body['path'], msg.body['watch_dir'])
-        pass
+
+        res = E_API_ERR
+        syncPath = msg.body['path']
+        if msg.body['watch_dir'] == "":
+            filePath = syncPath
+        filePath = msg.body['watch_dir'] + os.sep +msg.body['path']
+
+        for p in self.pluginManager.getAllPlugins():
+            res = p.getAPI().uploadSingleFile(filePath, syncPath, True)
+
+        if msg.header.ack:
+            self.replyResult(msg, res)
 
     def handleFileMkdir(self, msg):
         """docstring for handleFileMkdir"""
@@ -72,16 +95,14 @@ class UCloudActor(UActor):
     def handleFileList(self, msg):
         """docstring for handleFileList"""
         logging.debug('[%s]: handleFileList: %s', self.getName(), msg.body['path'])
-        res = E_OK
-        data = None
+        res = E_API_ERR
+        d = {}
 
         for p in self.pluginManager.getAllPlugins():
             res, d = p.getAPI().lsInCloud(msg.body['path'])
 
         if msg.header.ack:
             self.replyResult(msg, res, data=d)
-
-        return res, data
 
     def handleFileSync(self, msg):
         """docstring for handleFileSync"""
@@ -94,7 +115,7 @@ class UCloudActor(UActor):
         filePath = msg.body['path']
         isdir = msg.body['isdir']
 
-        res = E_OK
+        res = E_API_ERR
         for p in self.pluginManager.getAllPlugins():
             if isdir:
                 #res = p.getAPI().mkdirInCloud(path)

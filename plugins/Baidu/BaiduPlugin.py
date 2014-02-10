@@ -112,7 +112,7 @@ class BaiduCloudAPI(ClouldAPI):
             emsg = e.read()
             logging.error('[%s]: HTTP error=>%d, result=>%s', self.getName(), e.code, emsg)
             edata = json.loads(emsg)
-            error = {'http': e.code, 'code': edata['error']}
+            error = {'http': e.code, 'code': edata['error'], 'description': edata['error_description']}
             self.errorHandler(error)
 
     def getCloudInfo(self):
@@ -131,12 +131,25 @@ class BaiduCloudAPI(ClouldAPI):
             onDup = 'overwrite'
         param = {'method': 'upload', 'ondup': onDup, 'access_token': self.cf.get("BaiduCloud", "access_token")}
         param['path'] = self.cf.get("BaiduCloud", "app_path") + "/" + syncPath
-        fp = open(filePath)
-        ret_fp = cloud_multi_post(self.cf.get("BaiduCloud", "upload_url"), param, {'file': fp})
-        data = json.load(ret_fp)
-        ret_fp.close()
-        fp.close()
-        return data
+
+        try:
+            fp = open(filePath)
+            ret_fp = cloud_multi_post(self.cf.get("BaiduCloud", "upload_url"), param, {'file': fp})
+            data = json.load(ret_fp)
+            ret_fp.close()
+            fp.close()
+        except urllib2.HTTPError, e:
+            emsg = e.read()
+            logging.error('[%s]: HTTP error=>%d, result=>%s', self.getName(), e.code, emsg)
+            edata = json.loads(emsg)
+            error = {'http': e.code, 'code': edata['error_code']}
+            self.errorHandler(error)
+            res = E_API_ERR
+        except ValueError, e:
+            logging.error('[%s]: uploadSingleFile JSON load error %s', e)
+            res = E_VALUE_ERR
+
+        return self.parseResult(data)
 
     def downloadSingleFile(self, filePath, syncPath=None):
         """download single file from Baidu Cloud"""
@@ -218,6 +231,9 @@ class BaiduCloudAPI(ClouldAPI):
             res = strIO.getvalue()
             strIO.close()
             logging.debug('[%s]: File list result\n%s', self.getName(), res)
+        elif 'fs_id' in data:
+            #file operation is OK
+            res = E_OK
         else:
             res = data
 
