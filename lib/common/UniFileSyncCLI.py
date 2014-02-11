@@ -20,6 +20,7 @@ from UniFileSync.lib.common.Error import *
     -d --dir        specify a watch dir
     -l --load       load specify plugin
     -v --version    version of UniFileSyncCLI
+    -s --save       save configuration
 
 '''
 
@@ -45,35 +46,36 @@ class CLIArgument(object):
 
 def handle_params(c):
     """handle params and return a dict as above"""
+    params = {}
+    params['save'] = c.save
+
     if c.action == 'start':
-        if c.name:
-            return {'name': c.name}
-        else:
-            return {'name': None}
+        params['name'] = c.name
     elif c.action == 'stop':
-        if c.name:
-            return {'name': c.name}
-        else:
-            return {'name': None}
+        params['name'] = c.name
     elif c.action == 'proxy':
         if c.proxy:
-            return {'http': 'http://%s'%(c.proxy), 'https': 'https://%s'%(c.proxy)}
+            params['http'] = 'http://%s'%(c.proxy)
+            params['https'] = 'https://%s'%(c.proxy)
     elif c.action in ('watch', 'list', 'sync'):
         if c.dir:
-            return {'path': c.dir}
+            params['path'] = c.dir
+
+    return params
 
 def main():
     """main CLI for UniFileSync"""
     parser = argparse.ArgumentParser(prog='UniFileSyncCLI',
                 description='UniFileSync Command Line Interface',
                 )
-    parser.add_argument('action', nargs='?', help='start, restart, stop, watch, sync, list')
+    parser.add_argument('action', nargs='?', help='start, restart, stop, watch, sync, list, proxy')
 
     parser.add_argument('-n', '--name', nargs='?', help='specify a name')
     parser.add_argument('-p', '--proxy', nargs='?', help='specify proxy server')
     parser.add_argument('-d', '--dir', nargs='?', help='specify a path')
     parser.add_argument('-l', '--load', nargs='?', help='load specify plugin')
     parser.add_argument('-v', '--version', nargs='?', help='version of UniFileSyncCLI')
+    parser.add_argument('-s', '--save', nargs='?', help='save UniFileSync configuration')
 
     c = CLIArgument()
     parser.parse_args(namespace=c)
@@ -82,12 +84,13 @@ def main():
         parser.print_help()
         return
 
+    req = {'type': 'request','action': c.action, 'param': handle_params(c)}
+
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect(('localhost', 8089))
 
-    req = {'type': 'request','action': c.action, 'param': handle_params(c)}
-
     d = json.dumps(req)
+
     sock.send(d)
 
     buf = sock.recv(1024)

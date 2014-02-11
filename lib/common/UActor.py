@@ -144,7 +144,6 @@ class UActor(threading.Thread):
         rmsg.body = {'result': result}
 
         for k, v in kargs.iteritems():
-            #logging.debug('[%s]: k=>%s v=>%s', self.getName(), k, v)
             rmsg.body[k] = v
 
         logging.debug('[%s]: replyResult to Uid %d with result %s, body\n%s', self.getName(), rUid, result, rmsg.body)

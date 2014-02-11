@@ -132,24 +132,22 @@ class BaiduCloudAPI(ClouldAPI):
         param = {'method': 'upload', 'ondup': onDup, 'access_token': self.cf.get("BaiduCloud", "access_token")}
         param['path'] = self.cf.get("BaiduCloud", "app_path") + "/" + syncPath
 
+        res = E_API_ERR
+
         try:
             fp = open(filePath)
             ret_fp = cloud_multi_post(self.cf.get("BaiduCloud", "upload_url"), param, {'file': fp})
-            data = json.load(ret_fp)
+            res = json.load(ret_fp)
             ret_fp.close()
             fp.close()
         except urllib2.HTTPError, e:
-            emsg = e.read()
-            logging.error('[%s]: HTTP error=>%d, result=>%s', self.getName(), e.code, emsg)
-            edata = json.loads(emsg)
-            error = {'http': e.code, 'code': edata['error_code']}
-            self.errorHandler(error)
+            self.pcsErrorHandler(e)
             res = E_API_ERR
         except ValueError, e:
             logging.error('[%s]: uploadSingleFile JSON load error %s', e)
             res = E_VALUE_ERR
 
-        return self.parseResult(data)
+        return self.parseResult(res)
 
     def downloadSingleFile(self, filePath, syncPath=None):
         """download single file from Baidu Cloud"""
@@ -161,10 +159,20 @@ class BaiduCloudAPI(ClouldAPI):
         param = {'method': 'delete', 'access_token': self.cf.get("BaiduCloud", "access_token")}
         param['path'] = self.cf.get('BaiduCloud', 'app_path') + '/' + filePath
         url = self.cf.get('BaiduCloud', 'pcs_url') + '/file'
-        f = cloud_post(url, param)
-        data = json.load(f)
-        f.close()
-        return data
+
+        res = E_API_ERR
+        try:
+            f = cloud_post(url, param)
+            res = json.load(f)
+            f.close()
+        except urllib2.HTTPError, e:
+            self.pcsErrorHandler(e)
+            res = E_API_ERR
+        except ValueError, e:
+            logging.error('[%s]: uploadSingleFile JSON load error %s', e)
+            res = E_VALUE_ERR
+
+        return self.parseResult(res)
 
     def lsInCloud(self, filePath):
         """list dir in cloud"""
@@ -172,19 +180,18 @@ class BaiduCloudAPI(ClouldAPI):
         param = {'method': 'list', 'access_token': self.cf.get("BaiduCloud", "access_token")}
         param['path'] = self.cf.get('BaiduCloud', 'app_path') + '/' + filePath
         url = self.cf.get('BaiduCloud', 'pcs_url') + '/file'
+
         data = {}
-        res = E_OK
+        res = E_API_ERR
+
         try:
             f = cloud_post(url, param)
             data = json.load(f)
             #logging.debug('[%s]: data %s', self.getName(), data)
             f.close()
+            res = E_OK
         except urllib2.HTTPError, e:
-            emsg = e.read()
-            logging.error('[%s]: HTTP error=>%d, result=>%s', self.getName(), e.code, emsg)
-            edata = json.loads(emsg)
-            error = {'http': e.code, 'code': edata['error_code']}
-            self.errorHandler(error)
+            self.pcsErrorHandler(e)
             res = E_API_ERR
         except ValueError, e:
             logging.error('[%s]: lsInCloud JSON load error %s', e)
@@ -198,44 +205,58 @@ class BaiduCloudAPI(ClouldAPI):
         param = {'method': 'mkdir', 'access_token': self.cf.get('BaiduCloud', 'access_token')}
         param['path'] = self.cf.get('BaiduCloud', 'app_path') + '/' + dirPath
         url = self.cf.get('BaiduCloud', 'pcs_url') + '/file'
-        f = cloud_post(url, param)
-        data = json.load(f)
-        f.close()
-        return self.parseResult(data)
+
+        res = E_API_ERR
+        try:
+            f = cloud_post(url, param)
+            res = json.load(f)
+            f.close()
+        except urllib2.HTTPError, e:
+            self.pcsErrorHandler(e)
+            res = E_API_ERR
+        except ValueError, e:
+            logging.error('[%s]: lsInCloud JSON load error %s', e)
+            res = E_VALUE_ERR
+
+        return self.parseResult(res)
 
     def parseResult(self, data):
         """parse result to make it convient to read"""
         super(BaiduCloudAPI, self).parseResult(data)
-        res = None
-        if 'list' in data:
-            """
-            Directory of $DIRPATH
+        res = data
 
-            $TIME   <$ISDIR>   $SIZE   $PATH
+        try:
+            if 'list' in data:
+                """
+                Directory of $DIRPATH
 
-            """
-            strIO = io.StringIO()
-            files = data['list']
+                $TIME   <$ISDIR>   $SIZE   $PATH
 
-            strIO.write(u'\nDirectory of %s\n' % (self.cf.get('BaiduCloud', 'app_path')))
-            for f in files:
-                mtime = time.ctime(f['mtime'])
-                path = f['path']
-                size = f['size']
-                isdir = f['isdir']
-                if isdir:
-                    strIO.write(u'%s\t%s\t%d\t%s\n' % (mtime, '<DIR>', size, path))
-                else:
-                    strIO.write(u'%s\t\t%d\t%s\n' % (mtime, size, path))
+                """
+                strIO = io.StringIO()
+                files = data['list']
 
-            res = strIO.getvalue()
-            strIO.close()
-            logging.debug('[%s]: File list result\n%s', self.getName(), res)
-        elif 'fs_id' in data:
-            #file operation is OK
-            res = E_OK
-        else:
-            res = data
+                strIO.write(u'\nDirectory of %s\n' % (self.cf.get('BaiduCloud', 'app_path')))
+                for f in files:
+                    mtime = time.ctime(f['mtime'])
+                    path = f['path']
+                    size = f['size']
+                    isdir = f['isdir']
+                    if isdir:
+                        strIO.write(u'%s\t%s\t%d\t%s\n' % (mtime, '<DIR>', size, path))
+                    else:
+                        strIO.write(u'%s\t\t%d\t%s\n' % (mtime, size, path))
+
+                res = strIO.getvalue()
+                strIO.close()
+                logging.debug('[%s]: File list result\n%s', self.getName(), res)
+
+            elif 'fs_id' in data:
+                #file operation is OK
+                res = E_OK
+
+        except TypeError, e:
+            pass
 
         return res
 
@@ -257,6 +278,13 @@ class BaiduCloudAPI(ClouldAPI):
                 #Token expired
                 pass
 
+    def pcsErrorHandler(self, e):
+        """pcs error handler"""
+        emsg = e.read()
+        logging.error('[%s]: HTTP error=>%d, result=>%s', self.getName(), e.code, emsg)
+        edata = json.loads(emsg)
+        error = {'http': e.code, 'code': edata['error_code']}
+        self.errorHandler(error)
 
 baiduPlugin = BaiduPlugin('BaiduPlugin')
 baiduPlugin.active()

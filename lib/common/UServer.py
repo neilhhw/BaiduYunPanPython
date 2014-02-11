@@ -174,22 +174,25 @@ class UServer(UActor):
         sock.bind(('localhost', 8089))
         sock.listen(5)
 
-
         while self.isRunning:
-            conn, addr = sock.accept()
             try:
-                conn.settimeout(5)
-                buf = conn.recv(1024) #TODO: should be also in ConfManager
-                req = json.loads(buf)
-                logging.debug('[UniFileSync]: action %s, param %s', req['action'], req['param'])
-                #TODO: make it common for function usage
-                res, data = self.getHandler(req['action'])(req['param'])
-                ret = {'action': req['action'], 'param': {'data': data}, 'res': res, 'type': 'ack'}
-                conn.send(json.dumps(ret))
-            except socket.timeout:
-                logging.info('[UniFileSync]: socket time out from %s', addr)
-            finally:
-                conn.close()
+                conn, addr = sock.accept()
+                try:
+                    conn.settimeout(5)
+                    buf = conn.recv(1024) #TODO: should be also in ConfManager
+                    req = json.loads(buf)
+                    logging.debug('[UniFileSync]: action %s, param %s', req['action'], req['param'])
+                    #TODO: make it common for function usage
+                    res, data = self.getHandler(req['action'])(req['param'])
+                    ret = {'action': req['action'], 'param': {'data': data}, 'res': res, 'type': 'ack'}
+                    conn.send(json.dumps(ret))
+                except socket.timeout:
+                    logging.info('[UniFileSync]: socket time out from %s', addr)
+                finally:
+                    conn.close()
+            except KeyboardInterrupt:
+                print 'Press Ctrl+C'
+                #TODO:
 
     def stop(self):
         """Userver stop"""
