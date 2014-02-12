@@ -38,6 +38,8 @@ class UServer(UActor):
         self.cActor = UCloudActor('Cloud Actor')
         self.fsMonitor = FileSysMonitor('File Sys Monitor')
 
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
 
     def startHandler(self, param):
         """start handler for actors"""
@@ -169,14 +171,13 @@ class UServer(UActor):
     def run(self):
         """UServer entry"""
         super(UServer, self).run()
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         #TODO: below should be set by ConfManager
-        sock.bind(('localhost', 8089))
-        sock.listen(5)
+        self.sock.bind(('localhost', 8089))
+        self.sock.listen(5)
 
         while self.isRunning:
             try:
-                conn, addr = sock.accept()
+                conn, addr = self.sock.accept()
                 try:
                     conn.settimeout(5)
                     buf = conn.recv(1024) #TODO: should be also in ConfManager
@@ -188,16 +189,19 @@ class UServer(UActor):
                     conn.send(json.dumps(ret))
                 except socket.timeout:
                     logging.info('[UniFileSync]: socket time out from %s', addr)
+                except KeyError, e:
+                    logging.error('[%s]: Key Error with param %s', self.getName(), req['param'])
                 finally:
                     conn.close()
             except KeyboardInterrupt:
                 print 'Press Ctrl+C'
-                #TODO:
+                self.stop()
 
     def stop(self):
         """Userver stop"""
         super(UServer, self).stop()
         PluginManager.getManager().unloadAllPlugins()
+        self.sock.close()
 
     def configure(self):
         """server self configure when it is started"""

@@ -76,6 +76,8 @@ class UActor(threading.Thread):
 
     def getHandler(self, action):
         """get handler for action"""
+        if action not in self.__operTable:
+            raise KeyError
         return self.__operTable[action]
 
     def addListener(self, mUid):

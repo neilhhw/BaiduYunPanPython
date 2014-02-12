@@ -76,6 +76,10 @@ class ClouldAPI(object):
         """make dir in net disk"""
         logging.debug('[%s]: mkdirInCloud %s', self.name, dirPath)
 
+    def mvInCloud(self, toPath, fromPath):
+        """move in net disk"""
+        logging.debug('[%s]: mvInCloud %s=>%s', self.name, fromPath, toPath)
+
     def lsInCloud(self, filePath):
         """list files in filePath in cloud"""
         logging.debug('[%s]: lsInCloud %s', self.name, filePath)

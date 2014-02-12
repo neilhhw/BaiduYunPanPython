@@ -220,10 +220,15 @@ class BaiduCloudAPI(ClouldAPI):
 
         return self.parseResult(res)
 
+    def mvInCloud(self, toPath, fromPath):
+        """move in cloud"""
+        super(BaiduCloudAPI, self).mvInCloud(toPath, fromPath)
+
     def parseResult(self, data):
         """parse result to make it convient to read"""
         super(BaiduCloudAPI, self).parseResult(data)
-        res = data
+
+        res = E_API_ERR
 
         try:
             if 'list' in data:
@@ -253,6 +258,9 @@ class BaiduCloudAPI(ClouldAPI):
 
             elif 'fs_id' in data:
                 #file operation is OK
+                res = E_OK
+
+            elif 'request_id' in data:
                 res = E_OK
 
         except TypeError, e:
