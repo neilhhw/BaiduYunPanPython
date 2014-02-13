@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Form</class>
- <widget class="QWidget" name="Form">
+ <class>UniFileSyncPop</class>
+ <widget class="QWidget" name="UniFileSyncPop">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>497</width>
+    <width>522</width>
     <height>350</height>
    </rect>
   </property>
@@ -17,9 +17,9 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>UniFileSyncPop</string>
   </property>
-  <widget class="QLabel" name="label">
+  <widget class="QLabel" name="nameLabel">
    <property name="geometry">
     <rect>
      <x>50</x>
@@ -32,7 +32,7 @@
     <string>Hou Hongwei</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButton">
+  <widget class="QPushButton" name="connBtn">
    <property name="geometry">
     <rect>
      <x>340</x>
@@ -45,12 +45,12 @@
     <string>Connect</string>
    </property>
   </widget>
-  <widget class="QTabWidget" name="tabWidget">
+  <widget class="QTabWidget" name="mainTabWidget">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>70</y>
-     <width>501</width>
+     <width>531</width>
      <height>281</height>
     </rect>
    </property>
@@ -61,7 +61,7 @@
     </sizepolicy>
    </property>
    <property name="currentIndex">
-    <number>3</number>
+    <number>2</number>
    </property>
    <widget class="QWidget" name="folderTab">
     <attribute name="title">
@@ -72,7 +72,7 @@
       <rect>
        <x>0</x>
        <y>0</y>
-       <width>501</width>
+       <width>401</width>
        <height>261</height>
       </rect>
      </property>
@@ -84,7 +84,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>499</width>
+        <width>399</width>
         <height>259</height>
        </rect>
       </property>
@@ -93,7 +93,7 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>501</width>
+         <width>401</width>
          <height>261</height>
         </rect>
        </property>
@@ -103,12 +103,38 @@
       </widget>
      </widget>
     </widget>
+    <widget class="QPushButton" name="addFolderBtn">
+     <property name="geometry">
+      <rect>
+       <x>430</x>
+       <y>40</y>
+       <width>75</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Add</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="RmFolderBtn">
+     <property name="geometry">
+      <rect>
+       <x>430</x>
+       <y>110</y>
+       <width>75</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Remove</string>
+     </property>
+    </widget>
    </widget>
-   <widget class="QWidget" name="tab_2">
+   <widget class="QWidget" name="NetTab">
     <attribute name="title">
      <string>Network</string>
     </attribute>
-    <widget class="QLabel" name="label_2">
+    <widget class="QLabel" name="serverLabel">
      <property name="geometry">
       <rect>
        <x>20</x>
@@ -121,7 +147,7 @@
       <string>Proxy Server</string>
      </property>
     </widget>
-    <widget class="QLineEdit" name="lineEdit">
+    <widget class="QLineEdit" name="serverLineEdit">
      <property name="geometry">
       <rect>
        <x>110</x>
@@ -131,7 +157,7 @@
       </rect>
      </property>
     </widget>
-    <widget class="QLabel" name="label_3">
+    <widget class="QLabel" name="proxyNameLabel">
      <property name="geometry">
       <rect>
        <x>20</x>
@@ -144,7 +170,7 @@
       <string>User Name</string>
      </property>
     </widget>
-    <widget class="QLineEdit" name="lineEdit_2">
+    <widget class="QLineEdit" name="proxyNameLineEdit">
      <property name="geometry">
       <rect>
        <x>110</x>
@@ -154,7 +180,7 @@
       </rect>
      </property>
     </widget>
-    <widget class="QLabel" name="label_4">
+    <widget class="QLabel" name="proxyPwdLabel">
      <property name="geometry">
       <rect>
        <x>20</x>
@@ -167,7 +193,7 @@
       <string>Password</string>
      </property>
     </widget>
-    <widget class="QLineEdit" name="lineEdit_3">
+    <widget class="QLineEdit" name="proxyPwdLineEdit">
      <property name="geometry">
       <rect>
        <x>110</x>
@@ -177,10 +203,10 @@
       </rect>
      </property>
     </widget>
-    <widget class="QPushButton" name="pushButton_2">
+    <widget class="QPushButton" name="saveBtn">
      <property name="geometry">
       <rect>
-       <x>90</x>
+       <x>100</x>
        <y>210</y>
        <width>75</width>
        <height>23</height>
@@ -190,10 +216,10 @@
       <string>Save</string>
      </property>
     </widget>
-    <widget class="QPushButton" name="pushButton_3">
+    <widget class="QPushButton" name="resetBtn">
      <property name="geometry">
       <rect>
-       <x>320</x>
+       <x>300</x>
        <y>210</y>
        <width>75</width>
        <height>23</height>
@@ -204,12 +230,12 @@
      </property>
     </widget>
    </widget>
-   <widget class="QWidget" name="tab_3">
+   <widget class="QWidget" name="confTab">
     <attribute name="title">
      <string>Configuration</string>
     </attribute>
    </widget>
-   <widget class="QWidget" name="tab_4">
+   <widget class="QWidget" name="pluginTab">
     <attribute name="title">
      <string>Plugins</string>
     </attribute>
@@ -223,7 +249,7 @@
       </rect>
      </property>
     </widget>
-    <widget class="QPushButton" name="pushButton_4">
+    <widget class="QPushButton" name="unloadBtn">
      <property name="geometry">
       <rect>
        <x>390</x>
@@ -236,7 +262,7 @@
       <string>unload</string>
      </property>
     </widget>
-    <widget class="QPushButton" name="pushButton_5">
+    <widget class="QPushButton" name="reloadBtn">
      <property name="geometry">
       <rect>
        <x>390</x>
