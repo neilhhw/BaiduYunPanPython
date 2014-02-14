@@ -13,6 +13,8 @@ from PyQt4.QtGui import (
         QAction,
         QDialog,
         QListWidgetItem,
+        QMainWindow,
+        QStatusBar,
         QFileDialog)
 from PyQt4.QtCore import QString, SIGNAL, SLOT
 
@@ -29,7 +31,7 @@ app = QApplication(sys.argv)
 app.setQuitOnLastWindowClosed(False)
 
 m = QWidget()
-d = QDialog(m)
+d = QMainWindow(m)
 
 t = QSystemTrayIcon(m)
 t.setIcon(QIcon('icon/tray.png'))
@@ -39,16 +41,23 @@ ui.setupUi(d)
 
 d.setFixedSize(d.size())
 
+
 req = {'type': 'request'}
 
 confManager = ConfManager.getManager()
 
 ft = confManager.getValue('UniFileSync', 'folders')
 
+ui.nameLabel.setText(confManager.getValue('UniFileSync', 'user'))
+
 #print ft
 
 flistItem = QListWidgetItem(QIcon('icon/folder.png'), ft, ui.folderList)
 ui.folderList.insertItem(1, flistItem)
+
+statusBar = QStatusBar(d)
+statusBar.showMessage('I am OK!')
+d.setStatusBar(statusBar)
 
 def connect(btn):
     """connect to UniFileSync Server"""
