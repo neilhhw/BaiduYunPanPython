@@ -61,7 +61,7 @@
     </sizepolicy>
    </property>
    <property name="currentIndex">
-    <number>2</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="folderTab">
     <attribute name="title">
@@ -88,7 +88,7 @@
         <height>259</height>
        </rect>
       </property>
-      <widget class="QListWidget" name="folerList">
+      <widget class="QListWidget" name="folderList">
        <property name="geometry">
         <rect>
          <x>0</x>

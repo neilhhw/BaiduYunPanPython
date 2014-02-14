@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'UniFileSyncPop.ui'
 #
-# Created: Thu Feb 13 10:51:47 2014
+# Created: Thu Feb 13 16:45:06 2014
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -55,9 +55,9 @@ class Ui_UniFileSyncPop(object):
         self.scrollAreaWidgetContents = QtGui.QWidget()
         self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 399, 259))
         self.scrollAreaWidgetContents.setObjectName(_fromUtf8("scrollAreaWidgetContents"))
-        self.folerList = QtGui.QListWidget(self.scrollAreaWidgetContents)
-        self.folerList.setGeometry(QtCore.QRect(0, 0, 401, 261))
-        self.folerList.setObjectName(_fromUtf8("folerList"))
+        self.folderList = QtGui.QListWidget(self.scrollAreaWidgetContents)
+        self.folderList.setGeometry(QtCore.QRect(0, 0, 401, 261))
+        self.folderList.setObjectName(_fromUtf8("folderList"))
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
         self.addFolderBtn = QtGui.QPushButton(self.folderTab)
         self.addFolderBtn.setGeometry(QtCore.QRect(430, 40, 75, 23))
@@ -87,10 +87,10 @@ class Ui_UniFileSyncPop(object):
         self.proxyPwdLineEdit.setGeometry(QtCore.QRect(110, 120, 121, 20))
         self.proxyPwdLineEdit.setObjectName(_fromUtf8("proxyPwdLineEdit"))
         self.saveBtn = QtGui.QPushButton(self.NetTab)
-        self.saveBtn.setGeometry(QtCore.QRect(90, 210, 75, 23))
+        self.saveBtn.setGeometry(QtCore.QRect(100, 210, 75, 23))
         self.saveBtn.setObjectName(_fromUtf8("saveBtn"))
         self.resetBtn = QtGui.QPushButton(self.NetTab)
-        self.resetBtn.setGeometry(QtCore.QRect(320, 210, 75, 23))
+        self.resetBtn.setGeometry(QtCore.QRect(300, 210, 75, 23))
         self.resetBtn.setObjectName(_fromUtf8("resetBtn"))
         self.mainTabWidget.addTab(self.NetTab, _fromUtf8(""))
         self.confTab = QtGui.QWidget()
@@ -117,7 +117,7 @@ class Ui_UniFileSyncPop(object):
         UniFileSyncPop.setWindowTitle(_translate("UniFileSyncPop", "UniFileSyncPop", None))
         self.nameLabel.setText(_translate("UniFileSyncPop", "Hou Hongwei", None))
         self.connBtn.setText(_translate("UniFileSyncPop", "Connect", None))
-        self.folerList.setSortingEnabled(True)
+        self.folderList.setSortingEnabled(True)
         self.addFolderBtn.setText(_translate("UniFileSyncPop", "Add", None))
         self.RmFolderBtn.setText(_translate("UniFileSyncPop", "Remove", None))
         self.mainTabWidget.setTabText(self.mainTabWidget.indexOf(self.folderTab), _translate("UniFileSyncPop", "Folders", None))
