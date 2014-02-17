@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'UniFileSyncPop.ui'
 #
-# Created: Thu Feb 13 16:45:06 2014
+# Created: Mon Feb 17 12:08:56 2014
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -26,7 +26,7 @@ except AttributeError:
 class Ui_UniFileSyncPop(object):
     def setupUi(self, UniFileSyncPop):
         UniFileSyncPop.setObjectName(_fromUtf8("UniFileSyncPop"))
-        UniFileSyncPop.resize(522, 350)
+        UniFileSyncPop.resize(529, 369)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)

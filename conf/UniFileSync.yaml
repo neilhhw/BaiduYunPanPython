@@ -1,0 +1,23 @@
+--- #This configurations for all
+name: common
+folders:
+    - My Document
+    - test
+network:
+    server: 10.144.1.10:8080
+    user: hhou
+    password: 4680Abcd
+plugins:
+    - name: BaiduPlugin
+      path: plugins/baidu
+     
+--- #This is configuration for UI
+name: UI
+username: Neil Howie
+window:
+    - size:
+        hight: 600
+        width: 800
+statusbar:
+    messages:
+        init: Please connect to UniFileSync Server

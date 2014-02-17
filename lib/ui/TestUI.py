@@ -46,17 +46,19 @@ req = {'type': 'request'}
 
 confManager = ConfManager.getManager()
 
-ft = confManager.getValue('UniFileSync', 'folders')
+fts = confManager.getValue('common', 'folders')
 
-ui.nameLabel.setText(confManager.getValue('UniFileSync', 'user'))
+ui.nameLabel.setText(confManager.getValue('UI', 'username'))
 
-#print ft
-
-flistItem = QListWidgetItem(QIcon('icon/folder.png'), ft, ui.folderList)
-ui.folderList.insertItem(1, flistItem)
+i = 0
+for ft in fts:
+    flistItem = QListWidgetItem(QIcon('icon/folder.png'), ft, ui.folderList)
+    ui.folderList.insertItem(i, flistItem)
+    i += 1
 
 statusBar = QStatusBar(d)
-statusBar.showMessage('I am OK!')
+#print confManager.getValue('UI', 'window')
+statusBar.showMessage(confManager.getValue('UI', 'statusbar')['messages']['init'])
 d.setStatusBar(statusBar)
 
 def connect(btn):
@@ -87,16 +89,14 @@ def connect(btn):
     except socket.error, e:
         print '%s' % e
 
-
-fileDialog = QFileDialog(d)
-fileDialog.setWindowTitle('Select Folder')
-
 def select():
     """select folder"""
-    fileDialog.getExistingDirectory()
-    if fileDialog.exec_() == QDialog.Accepted:
-        folderPath = fileDialog.selectedFiles()[0]
-        print folderPath
+    fileDialog = QFileDialog(d)
+    fileDialog.setWindowTitle('Select Folder')
+    folderPath = fileDialog.getExistingDirectory()
+    print folderPath
+    fts.append('%s' % folderPath)
+    confManager.setValue('common', 'folders', fts)
 
 
 ui.connBtn.connect(ui.connBtn, SIGNAL('clicked()'), lambda: connect(ui.connBtn))
