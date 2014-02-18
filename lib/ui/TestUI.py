@@ -94,9 +94,10 @@ def select():
     fileDialog = QFileDialog(d)
     fileDialog.setWindowTitle('Select Folder')
     folderPath = fileDialog.getExistingDirectory()
-    print folderPath
+    #print folderPath
     fts.append('%s' % folderPath)
     confManager.setValue('common', 'folders', fts)
+    confManager.save()
 
 
 ui.connBtn.connect(ui.connBtn, SIGNAL('clicked()'), lambda: connect(ui.connBtn))

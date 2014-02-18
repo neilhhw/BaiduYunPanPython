@@ -1,23 +1,23 @@
---- #This configurations for all
-name: common
-folders:
-    - My Document
-    - test
-network:
+- folders:
+  - My Document
+  - test
+  - !!python/unicode 'D:\MyCode\UniFileSync\lib\ui\icon'
+  name: common
+  network:
+    password: 4680Abcd
     server: 10.144.1.10:8080
     user: hhou
-    password: 4680Abcd
-plugins:
-    - name: BaiduPlugin
-      path: plugins/baidu
-     
---- #This is configuration for UI
-name: UI
-username: Neil Howie
-window:
-    - size:
-        hight: 600
-        width: 800
-statusbar:
+  plugins:
+  - name: BaiduPlugin
+    path: plugins/baidu
+  - name: KingPan
+    path: plugins/kingsoft
+- name: UI
+  statusbar:
     messages:
-        init: Please connect to UniFileSync Server
+      init: Please connect to UniFileSync Server
+  username: Neil Howie
+  window:
+  - size:
+      hight: 600
+      width: 800

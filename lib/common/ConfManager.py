@@ -44,7 +44,7 @@ class ConfManager(object):
 
     def getValue(self, section, key):
         """get config value from key"""
-        for content in yaml.load_all(self.__confContent):
+        for content in yaml.load(self.__confContent):
             #print content
             if content['name'] == section:
                 return content[key]
@@ -52,17 +52,14 @@ class ConfManager(object):
     def setValue(self, section, key, value):
         """set value to current key"""
         #print section, key, value, self.__confContent
-
-        x = yaml.load_all(self.__confContent)
+        x = yaml.load(self.__confContent)
 
         for content in x:
             if content['name'] == section:
                 content[key] = value
-                print yaml.dump(content)
 
-        for c in x:
-            print c
-        print yaml.dump_all(x)
+        self.__confContent = yaml.dump(x, default_flow_style=False)
+        #print self.__confContent
 
     def getScriptHome(self):
         """get scrip path"""
@@ -95,7 +92,7 @@ class ConfManager(object):
     def __del__(self):
         """self-defined __del__function"""
         super(ConfManager, self).__del__()
-        #self.save()
+        self.save()
 
 if __name__ == '__main__':
     print '%s' % ConfManager.getManager().getPluginPaths()

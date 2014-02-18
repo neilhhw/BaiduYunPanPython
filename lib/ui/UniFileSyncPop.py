@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'UniFileSyncPop.ui'
 #
-# Created: Mon Feb 17 12:08:56 2014
+# Created: Tue Feb 18 10:15:31 2014
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -33,10 +33,10 @@ class Ui_UniFileSyncPop(object):
         sizePolicy.setHeightForWidth(UniFileSyncPop.sizePolicy().hasHeightForWidth())
         UniFileSyncPop.setSizePolicy(sizePolicy)
         self.nameLabel = QtGui.QLabel(UniFileSyncPop)
-        self.nameLabel.setGeometry(QtCore.QRect(50, 10, 161, 41))
+        self.nameLabel.setGeometry(QtCore.QRect(20, 10, 91, 41))
         self.nameLabel.setObjectName(_fromUtf8("nameLabel"))
         self.connBtn = QtGui.QPushButton(UniFileSyncPop)
-        self.connBtn.setGeometry(QtCore.QRect(340, 20, 75, 23))
+        self.connBtn.setGeometry(QtCore.QRect(150, 20, 75, 23))
         self.connBtn.setObjectName(_fromUtf8("connBtn"))
         self.mainTabWidget = QtGui.QTabWidget(UniFileSyncPop)
         self.mainTabWidget.setGeometry(QtCore.QRect(0, 70, 531, 281))
@@ -102,12 +102,18 @@ class Ui_UniFileSyncPop(object):
         self.pluginList.setGeometry(QtCore.QRect(0, 0, 371, 261))
         self.pluginList.setObjectName(_fromUtf8("pluginList"))
         self.unloadBtn = QtGui.QPushButton(self.pluginTab)
-        self.unloadBtn.setGeometry(QtCore.QRect(390, 40, 75, 23))
+        self.unloadBtn.setGeometry(QtCore.QRect(400, 110, 75, 23))
         self.unloadBtn.setObjectName(_fromUtf8("unloadBtn"))
         self.reloadBtn = QtGui.QPushButton(self.pluginTab)
-        self.reloadBtn.setGeometry(QtCore.QRect(390, 130, 75, 23))
+        self.reloadBtn.setGeometry(QtCore.QRect(400, 180, 75, 23))
         self.reloadBtn.setObjectName(_fromUtf8("reloadBtn"))
+        self.addBtn = QtGui.QPushButton(self.pluginTab)
+        self.addBtn.setGeometry(QtCore.QRect(400, 50, 75, 23))
+        self.addBtn.setObjectName(_fromUtf8("addBtn"))
         self.mainTabWidget.addTab(self.pluginTab, _fromUtf8(""))
+        self.infoLabel = QtGui.QLabel(UniFileSyncPop)
+        self.infoLabel.setGeometry(QtCore.QRect(290, 10, 221, 61))
+        self.infoLabel.setObjectName(_fromUtf8("infoLabel"))
 
         self.retranslateUi(UniFileSyncPop)
         self.mainTabWidget.setCurrentIndex(0)
@@ -130,5 +136,7 @@ class Ui_UniFileSyncPop(object):
         self.mainTabWidget.setTabText(self.mainTabWidget.indexOf(self.confTab), _translate("UniFileSyncPop", "Configuration", None))
         self.unloadBtn.setText(_translate("UniFileSyncPop", "unload", None))
         self.reloadBtn.setText(_translate("UniFileSyncPop", "reload", None))
+        self.addBtn.setText(_translate("UniFileSyncPop", "add", None))
         self.mainTabWidget.setTabText(self.mainTabWidget.indexOf(self.pluginTab), _translate("UniFileSyncPop", "Plugins", None))
+        self.infoLabel.setText(_translate("UniFileSyncPop", "Cloud Disk info label", None))
 

@@ -118,10 +118,17 @@ class BaiduCloudAPI(ClouldAPI):
     def getCloudInfo(self):
         url = self.cf.get("BaiduCloud", "pcs_url") + "/quota"
         param = {"method": "info", "access_token": self.cf.get("BaiduCloud", "access_token")}
-        f = cloud_get(url, param)
-        data = json.load(f)
-        f.close()
-        return data
+        try:
+            f = cloud_get(url, param)
+            data = json.load(f)
+            f.close()
+        except ValueError, e:
+            logging.error('[%s]: getCloudInfo JSON load error %s', e)
+            res = E_VALUE_ERR
+        except urllib2.HTTPError, e:
+            self.pcsErrorHandler(e)
+            res = E_API_ERR
+        return res,  self.parseResult(data)
 
     def uploadSingleFile(self, filePath, syncPath, isReplace=False):
         """upload single file to Baidu Yun Pan"""
