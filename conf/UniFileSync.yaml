@@ -12,12 +12,19 @@
     path: plugins/baidu
   - name: KingPan
     path: plugins/kingsoft
+
 - name: UI
   statusbar:
     messages:
       init: Please connect to UniFileSync Server
+      connected: UniFileSync Server is connected
   username: Neil Howie
   window:
   - size:
       hight: 600
       width: 800
+  trayicon:
+      popup:
+          title: UniFileSyncUI is starting
+          message: Please configure your UniFileSync
+

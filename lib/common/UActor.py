@@ -56,10 +56,14 @@ class UActor(threading.Thread):
         caller = inspect.stack()[1]
         return caller[3]
 
+    def regSelfToBus(self):
+        """register itself to message bus"""
+        self.__msgBus.regQ(self.__msgUid, self.__msgQueue)
+
     def run(self):
         """actor entry"""
         logging.debug('[%s]: is running', self.getName())
-        self.__msgBus.regQ(self.__msgUid, self.__msgQueue)
+        self.regSelfToBus()
         self.__isRunning = True
 
     def stop(self):

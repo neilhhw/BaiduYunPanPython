@@ -38,8 +38,13 @@ class UServer(UActor):
         self.cActor = UCloudActor('Cloud Actor')
         self.fsMonitor = FileSysMonitor('File Sys Monitor')
 
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.isEnableSocket = False
 
+
+    def enableSocket(self):
+        """enable socket as net server"""
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.isEnableSocket = True
 
     def startHandler(self, param):
         """start handler for actors"""
@@ -172,36 +177,39 @@ class UServer(UActor):
         """UServer entry"""
         super(UServer, self).run()
         #TODO: below should be set by ConfManager
-        self.sock.bind(('localhost', 8089))
-        self.sock.listen(5)
 
-        while self.isRunning:
-            try:
-                conn, addr = self.sock.accept()
+        if self.isEnableSocket:
+            self.sock.bind(('localhost', 8089))
+            self.sock.listen(5)
+
+            while self.isRunning:
                 try:
-                    conn.settimeout(5)
-                    buf = conn.recv(1024) #TODO: should be also in ConfManager
-                    req = json.loads(buf)
-                    logging.debug('[UniFileSync]: action %s, param %s', req['action'], req['param'])
-                    #TODO: make it common for function usage
-                    res, data = self.getHandler(req['action'])(req['param'])
-                    ret = {'action': req['action'], 'param': {'data': data}, 'res': res, 'type': 'ack'}
-                    conn.send(json.dumps(ret))
-                except socket.timeout:
-                    logging.info('[UniFileSync]: socket time out from %s', addr)
-                except KeyError, e:
-                    logging.error('[%s]: Key Error with param %s', self.getName(), req['param'])
-                finally:
-                    conn.close()
-            except KeyboardInterrupt:
-                print 'Press Ctrl+C'
-                self.stop()
+                    conn, addr = self.sock.accept()
+                    try:
+                        conn.settimeout(5)
+                        buf = conn.recv(1024) #TODO: should be also in ConfManager
+                        req = json.loads(buf)
+                        logging.debug('[UniFileSync]: action %s, param %s', req['action'], req['param'])
+                        #TODO: make it common for function usage
+                        res, data = self.getHandler(req['action'])(req['param'])
+                        ret = {'action': req['action'], 'param': {'data': data}, 'res': res, 'type': 'ack'}
+                        conn.send(json.dumps(ret))
+                    except socket.timeout:
+                        logging.info('[UniFileSync]: socket time out from %s', addr)
+                    except KeyError, e:
+                        logging.error('[%s]: Key Error with param %s', self.getName(), req['param'])
+                    finally:
+                        conn.close()
+                except KeyboardInterrupt:
+                    print 'Press Ctrl+C'
+                    self.stop()
 
     def stop(self):
         """Userver stop"""
         super(UServer, self).stop()
         PluginManager.getManager().unloadAllPlugins()
-        self.sock.close()
+        if self.isEnableSocket:
+            self.sock.close()
 
     def configure(self):
         """server self configure when it is started"""
@@ -211,5 +219,6 @@ class UServer(UActor):
 if __name__ == '__main__':
     us = UServer()
     us.setName('UniFileSync Server')
+    us.enableSocket()
     us.run()
 
