@@ -104,17 +104,35 @@ class UniFileSyncUI(QMainWindow):
         #connect the signal with slot
         self.connectUISlots(self.ui)
 
+        #set UI label
+        username = self.confManager.getValue('UI', 'username')
+        self.ui.nameLabel.setText(username)
+
     def connectUISlots(self, ui):
         """connect ui component with slots"""
         ui.connBtn.clicked.connect(lambda : self.connBtnSlots(ui.connBtn))
+        ui.addFolderBtn.clicked.connect(lambda: self.connBtnSlots(ui.addFolderBtn))
+        ui.rmFolderBtn.clicked.connect(lambda: self.connBtnSlots(ui.rmFolderBtn))
 
     def connBtnSlots(self, btn):
         """docstring for connBtnSlots"""
-        if btn.text() == 'Connect':
-            self.server.getHandler('start')({'name': 'all'})
-            btn.setText('Disconnect')
-        else:
-            self.server.getHandler('stop')({'name': 'all'})
+        if btn is self.ui.connBtn:
+            if btn.text() == 'Connect':
+                self.server.getHandler('start')({'name': 'all'})
+                btn.setText('Disconnect')
+            else:
+                self.server.getHandler('stop')({'name': 'all'})
+        elif btn is self.ui.addFolderBtn:
+            fileDialog = QFileDialog(self)
+            fileDialog.setWindowTitle('Select Folder')
+            folderPath = fileDialog.getExistingDirectory()
+            if folderPath == "":
+                listItem = QListWidgetItem(QIcon('icon/folder.png'), folderPath, self.ui.folderList)
+                self.ui.folderList.insertItem(self.ui.folderList.count(), listItem)
+        elif btn is self.ui.rmFolderBtn:
+            listItem = self.ui.folderList.currentItem()
+            print listItem.text()
+            self.ui.folderList.removeItemWidget(listItem)
 
     def createStatusBar(self):
         """create status bar"""
