@@ -31,6 +31,7 @@ class UCloudActor(UActor):
                 MSG_ID_T_FILE_LIST: self.handleFileList,
                 MSG_ID_T_FILE_SYNC: self.handleFileSync,
                 MSG_ID_T_FILE_RENAME: self.handleFileRename,
+                MSG_ID_T_FILE_INFO: self.handleFileInfo,
                 }
 
     def run(self):
@@ -137,6 +138,23 @@ class UCloudActor(UActor):
         """docstring for handleFileSync"""
         logging.debug('[%s]: handleFileSync: %s', self.getName(), msg.body['path'])
         return E_OK
+
+    def handleFileInfo(self, msg):
+        """handle get cloud information"""
+        logging.debug('[%s]: handleFileInfo: %s', self.getName(), msg.body)
+
+        res = E_API_ERR
+        d = ""
+        result = {}
+
+        for p in self.pluginManager.getAllPlugins():
+            res, d = p.getAPI().getCloudInfo()
+            result[p.name] = [res, d]
+
+        res, d = self.parseResult(result)
+
+        if msg.header.ack:
+            self.replyResult(msg, res, data=d)
 
     def handleFileRename(self, msg):
         """docstring for handleFileRename"""

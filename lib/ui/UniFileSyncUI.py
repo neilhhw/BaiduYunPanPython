@@ -136,11 +136,14 @@ class UniFileSyncUI(QMainWindow):
         """docstring for connBtnSlots"""
         if btn is self.ui.connBtn:
             if btn.text() == 'Connect':
-                #self.server.getHandler('start')({'name': 'all'})
+                res, data = self.server.getHandler('info')({'name': 'all'})
                 btn.setText('Disconnect')
+                self.ui.infoLabel.setText(data)
             else:
                 #self.server.getHandler('stop')({'name': 'all'})
                 btn.setText('Connect')
+                self.ui.infoLabel.setText('Cloud Disk is disconnected')
+
         elif btn is self.ui.addFolderBtn:
             fileDialog = QFileDialog(self)
             fileDialog.setWindowTitle('Select Folder')

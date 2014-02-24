@@ -118,9 +118,14 @@ class BaiduCloudAPI(ClouldAPI):
     def getCloudInfo(self):
         url = self.cf.get("BaiduCloud", "pcs_url") + "/quota"
         param = {"method": "info", "access_token": self.cf.get("BaiduCloud", "access_token")}
+
+        res = E_API_ERR
+        data = "getCloudInfo failure"
+
         try:
             f = cloud_get(url, param)
             data = json.load(f)
+            res = E_OK
             f.close()
         except ValueError, e:
             logging.error('[%s]: getCloudInfo JSON load error %s', e)
@@ -128,7 +133,7 @@ class BaiduCloudAPI(ClouldAPI):
         except urllib2.HTTPError, e:
             self.pcsErrorHandler(e)
             res = E_API_ERR
-        return res,  self.parseResult(data)
+        return res, self.parseResult(data)
 
     def uploadSingleFile(self, filePath, syncPath, isReplace=False):
         """upload single file to Baidu Yun Pan"""
@@ -262,6 +267,16 @@ class BaiduCloudAPI(ClouldAPI):
                 res = strIO.getvalue()
                 strIO.close()
                 logging.debug('[%s]: File list result\n%s', self.getName(), res)
+
+            elif 'quota' in data:
+                """
+                    Quota: %dGB
+                    Used: %dKB
+                """
+                quota = data['quota'] / (1024*1024*1024)
+                used = data['used'] / (1024*1024)
+
+                res = "Quota: %sGB, Used: %sKB" % (quota, used)
 
             elif 'fs_id' in data:
                 #file operation is OK

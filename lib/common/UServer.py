@@ -33,6 +33,7 @@ class UServer(UActor):
         self.addHandler('watch', self.watchHandler)
         self.addHandler('list', self.listHandler)
         self.addHandler('sync', self.syncHandler)
+        self.addHandler('info', self.infoHandler)
 
         self.__startActors = []
 
@@ -174,6 +175,22 @@ class UServer(UActor):
             res = rmsg.body['result']
 
         return res, None
+
+    def infoHandler(self, param):
+        """get information of cloud"""
+        logging.debug('[%s]: infoHandler with parm %s', self.getName(), param);
+        msg = self.initMsg(MSG_TYPE_T_FILE, MSG_ID_T_FILE_INFO, MSG_UNIQUE_ID_T_CLOUD_ACTOR, True)
+        msg.body = param
+        self.msgBus.send(msg)
+        rmsg = self.getMsg(None)
+        res = E_API_ERR
+        data = "Cloud API Error"
+        if rmsg:
+            res = rmsg.body['result']
+            data = rmsg.body['data']
+
+        return res, data
+
 
     def run(self):
         """UServer entry"""

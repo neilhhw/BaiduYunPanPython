@@ -86,7 +86,7 @@ class ClouldAPI(object):
 
     def parseResult(self, data):
         """parse plugin result"""
-        logging.debug('[%s]: parseResult...', self.name)
+        logging.debug('[%s]: parseResult %s...', self.name, data)
 
     def errorHandler(self, error):
         """error handler"""
@@ -95,4 +95,8 @@ class ClouldAPI(object):
     def getName(self):
         """get API name"""
         return self.name
+
+    def getCloudInfo(self):
+        """get cloud disk information"""
+        logging.debug('[%s]: getCloudInfo...', self.name)
 
