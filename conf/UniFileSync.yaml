@@ -4,9 +4,10 @@
   - !!python/unicode 'D:\MyCode\UniFileSync\lib\ui\icon'
   name: common
   network:
-    password: 4680Abcd
-    server: 10.144.1.10:8080
+    password: 5791Abcd
+    proxy: 10.144.1.10:8080
     user: hhou
+    port: 8089
   plugins:
   - name: BaiduPlugin
     path: plugins/baidu

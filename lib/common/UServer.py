@@ -10,6 +10,7 @@ from UniFileSync.lib.common.LogManager import logging
 from UniFileSync.lib.common.UCloudActor import UCloudActor
 from UniFileSync.lib.common.Net import set_proxy, register_openers
 from UniFileSync.lib.common.PluginManager import PluginManager
+from UniFileSync.lib.common.ConfManager import ConfManager
 
 if platform.system() == 'Windows':
     from UniFileSync.lib.platform.windows.UFSMonitor import WinFileSysMonitor as FileSysMonitor
@@ -55,6 +56,7 @@ class UServer(UActor):
         else:
             name = ''
         res = E_OK
+
 
         if name == 'all' or name == '':
             if self.cActor.isRunning or self.fsMonitor.isRunning:
@@ -215,6 +217,10 @@ class UServer(UActor):
         """server self configure when it is started"""
         register_openers()
         PluginManager.getManager().loadAllPlugins()
+        confManager = ConfManager.getManager()
+        proxy = confManager.getValue('common', 'network')
+        param = {'http': 'http://%s' % proxy['proxy'], 'https': 'https://%s' % proxy['proxy'] }
+        set_proxy(param)
 
 if __name__ == '__main__':
     us = UServer()
