@@ -4,7 +4,7 @@ import os, errno
 import threading
 import yaml
 
-from UniFileSync.lib.common.LogManager import logging
+#from UniFileSync.lib.common.LogManager import logging
 
 class ConfManager(object):
     """Configuration Manager for UniFileSync"""
@@ -18,8 +18,10 @@ class ConfManager(object):
     __confContent = None
 
     userHome   = os.path.expanduser('~')
-    userPluginPath = '%s%s%s%s%s' % (userHome, os.sep, '.UniFileSync', os.sep, 'plugins')
-    userConfPath = '%s%s%s%s%s' % (userHome, os.sep, '.UniFileSync', os.sep, 'conf')
+    userFilePath = '%s%s%s' % (userHome, os.sep, '.UniFileSync')
+    userPluginPath = userFilePath + os.sep + 'plugins'
+    userConfPath = userFilePath + os.sep + 'conf'
+    userLogPath = userFilePath + os.sep + 'log'
 
     scriptHome = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
     scriptPluginPath = '%s%s%s' % (scriptHome, os.sep, 'plugins')
@@ -39,6 +41,7 @@ class ConfManager(object):
             ConfManager.__confContent = ConfManager.__confFile.read()
             ConfManager.__instance.mkdir(ConfManager.userPluginPath)
             ConfManager.__instance.mkdir(ConfManager.userConfPath)
+            ConfManager.__instance.mkdir(ConfManager.userLogPath)
         ConfManager.__lock.release()
         return ConfManager.__instance
 
@@ -72,6 +75,10 @@ class ConfManager(object):
     def getPluginPaths(self):
         """get plugin path"""
         return [ConfManager.scriptPluginPath, ConfManager.userPluginPath]
+
+    def getUserLogPath(self):
+        """return user logs dir path"""
+        return ConfManager.userLogPath
 
     def mkdir(self, path):
         """mkdir for UniFileSync self defined"""
