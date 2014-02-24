@@ -50,6 +50,9 @@ class UniFileSyncUI(QMainWindow):
         self.trayIcon.show()
         self.showTrayIconMessage()
 
+        #setup folder list
+        self.setupFolderList(self.ui.folderList)
+
     def closeEvent(self, event):
         """override close event"""
         logging.debug('[%s] is closed', self.server.getName())
@@ -98,8 +101,6 @@ class UniFileSyncUI(QMainWindow):
         stBarConf = self.confManager.getValue('UI', 'statusbar')
         self.statusbar.showMessage(stBarConf['messages']['init'])
 
-        #setup folder list
-        self.setupFolderList(self.ui.folderList)
 
         #connect the signal with slot
         self.connectUISlots(self.ui)
@@ -126,7 +127,7 @@ class UniFileSyncUI(QMainWindow):
             fileDialog = QFileDialog(self)
             fileDialog.setWindowTitle('Select Folder')
             folderPath = fileDialog.getExistingDirectory()
-            if folderPath == "":
+            if folderPath != "":
                 listItem = QListWidgetItem(QIcon('icon/folder.png'), folderPath, self.ui.folderList)
                 self.ui.folderList.insertItem(self.ui.folderList.count(), listItem)
         elif btn is self.ui.rmFolderBtn:
