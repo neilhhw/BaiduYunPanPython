@@ -129,6 +129,18 @@ class UniFileSyncUI(QMainWindow):
         """ovrride parent show method"""
         super(UniFileSyncUI, self).show()
 
+        #Init status bar
+        stBarConf = self.confManager.getValue('UI', 'statusbar')
+        self.statusbar.showMessage(stBarConf['messages']['init'])
+
+
+        #connect the signal with slot
+        self.connectUISlots(self.ui)
+
+        #set UI label
+        username = self.confManager.getValue('UI', 'username')
+        self.ui.nameLabel.setText(username)
+
     def connectUISlots(self, ui):
         """connect ui component with slots"""
         ui.connBtn.clicked.connect(lambda : self.connBtnSlots(ui.connBtn))
