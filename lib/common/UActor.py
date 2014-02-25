@@ -134,9 +134,9 @@ class UActor(threading.Thread):
         self.__actorName = name
         super(UActor, self).setName(name)
 
-    def initMsg(self, mtype, mid, rUid=None, ack=False):
+    def initMsg(self, mtype, mid, rUid=None, ack=False, body={}):
         """init message for common usage"""
-        return UMsg(mtype, mid, rUid, self.__msgUid, ack, {})
+        return UMsg(mtype, mid, rUid, self.__msgUid, ack, body)
 
     def setMsgUid(self, msgUid):
         """set current msg uid"""

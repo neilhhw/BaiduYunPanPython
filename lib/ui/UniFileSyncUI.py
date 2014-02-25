@@ -66,7 +66,10 @@ class UniFileSyncUI(QMainWindow):
         self.ui.nameLabel.setText(username)
 
         #Start server immediately
-        self.server.getHandler('start')({'name': 'all'})
+        self.server.start()
+        #self.server.getHandler('start')({'name': 'all'})
+        msg = self.server.initMsg('start', None, MSG_UNIQUE_ID_T_CONTROLLER, False, {'name': 'all'})
+        UMsgBus.getBus().send(msg)
 
     def closeEvent(self, event):
         """override close event"""
@@ -81,7 +84,7 @@ class UniFileSyncUI(QMainWindow):
         """create tray icon menu action"""
         self.configAction = QAction("&ShowConfig", self, triggered=self.show)
         self.exitAction = QAction("&Exit", self)
-        self.exitAction.triggered.connect(lambda: self.server.getHandler('stop')({'name': 'all'}))
+        self.exitAction.triggered.connect(lambda: UMsgBus.getBus().send(self.server.initMsg('stop', None, MSG_UNIQUE_ID_T_CONTROLLER, False, {'name': 'all'})))
         self.exitAction.triggered.connect(qApp.quit)
 
     def createTrayIcon(self):
@@ -136,6 +139,7 @@ class UniFileSyncUI(QMainWindow):
         """docstring for connBtnSlots"""
         if btn is self.ui.connBtn:
             if btn.text() == 'Connect':
+                #msg = self.server.initMsg('info', None, MSG_UNIQUE_ID_T_CONTROLLER, True, {'name': 'all'})
                 res, data = self.server.getHandler('info')({'name': 'all'})
                 btn.setText('Disconnect')
                 self.ui.infoLabel.setText(data)

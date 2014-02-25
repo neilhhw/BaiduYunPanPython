@@ -3,6 +3,7 @@
 import socket
 import json
 import platform
+import Queue
 
 from UniFileSync.lib.common.MsgBus import *
 from UniFileSync.lib.common.UActor import UActor
@@ -222,6 +223,28 @@ class UServer(UActor):
                 except KeyboardInterrupt:
                     print 'Press Ctrl+C'
                     self.stop()
+        else:
+            self.msgLoop()
+
+
+    def msgLoop(self):
+        """message loop for server"""
+        res = E_OK
+        data = None
+        while self.isRunning:
+            try:
+                msg = self.msgQueue.get(True)
+                if msg and msg.header.mtype:
+                    res, data = self.getHandler(msg.header.mtype)(msg.body)
+                    if msg.header.ack:
+                        pass
+
+            except Queue.Empty, e:
+                logging.error('[%s]: msgLoop timeout with empty item', self.getName())
+            finally:
+                pass
+
+
 
     def stop(self):
         """Userver stop"""
