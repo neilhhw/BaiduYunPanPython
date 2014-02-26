@@ -37,12 +37,17 @@ class UServer(UActor):
         self.addHandler('info', self.infoHandler)
 
         self.__startActors = []
+        self.__callbackList = []
 
         self.cActor = UCloudActor('Cloud Actor')
         self.fsMonitor = FileSysMonitor('File Sys Monitor')
 
         self.isEnableSocket = False
 
+
+    def addCallBack(self, callback):
+        """add call back function for UServer"""
+        self.__callbackList.append(callback)
 
     def enableSocket(self):
         """enable socket as net server"""
@@ -237,7 +242,8 @@ class UServer(UActor):
                 if msg and msg.header.mtype:
                     res, data = self.getHandler(msg.header.mtype)(msg.body)
                     if msg.header.ack:
-                        pass
+                        for c in self.__callbackList:
+                            c({'result': res, 'data': data})
 
             except Queue.Empty, e:
                 logging.error('[%s]: msgLoop timeout with empty item', self.getName())

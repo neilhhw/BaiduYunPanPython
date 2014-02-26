@@ -71,6 +71,9 @@ class UniFileSyncUI(QMainWindow):
         msg = self.server.initMsg('start', None, MSG_UNIQUE_ID_T_CONTROLLER, False, {'name': 'all'})
         UMsgBus.getBus().send(msg)
 
+        self.server.addCallBack(self.statusbarUpdate)
+        self.server.addCallBack(self.infoLabelUpdate)
+
     def closeEvent(self, event):
         """override close event"""
         if self.trayIcon.isVisible():
@@ -133,10 +136,6 @@ class UniFileSyncUI(QMainWindow):
         stBarConf = self.confManager.getValue('UI', 'statusbar')
         self.statusbar.showMessage(stBarConf['messages']['init'])
 
-
-        #connect the signal with slot
-        self.connectUISlots(self.ui)
-
         #set UI label
         username = self.confManager.getValue('UI', 'username')
         self.ui.nameLabel.setText(username)
@@ -151,11 +150,13 @@ class UniFileSyncUI(QMainWindow):
         """docstring for connBtnSlots"""
         if btn is self.ui.connBtn:
             if btn.text() == 'Connect':
-                #msg = self.server.initMsg('info', None, MSG_UNIQUE_ID_T_CONTROLLER, True, {'name': 'all'})
-                res, data = self.server.getHandler('info')({'name': 'all'})
-                btn.setText('Disconnect')
-                self.ui.infoLabel.setText(data)
-            else:
+                msg = self.server.initMsg('info', None, MSG_UNIQUE_ID_T_CONTROLLER, True, {'name': 'all'})
+                UMsgBus.getBus().send(msg)
+                #res, data = self.server.getHandler('info')({'name': 'all'})
+                btn.setText('Connecting')
+                #self.ui.infoLabel.setText(data)
+                logging.debug('[%s]: Press Connect to getCloudInfo', self.getName())
+            elif btn.text() == 'Disconnect':
                 #self.server.getHandler('stop')({'name': 'all'})
                 btn.setText('Connect')
                 self.ui.infoLabel.setText('Cloud Disk is disconnected')
@@ -185,6 +186,18 @@ class UniFileSyncUI(QMainWindow):
     def getName(self):
         """get server name"""
         return self.server.getName()
+
+    def statusbarUpdate(self, param):
+        """statusbar update callback"""
+        logging.debug('[%s] statusbarUpdate called', self.getName())
+        self.statusbar.showMessage(ERR_STR_TABLE[param['result']])
+
+    def infoLabelUpdate(self, param):
+        """infoLabelUpdate"""
+        if param['data']:
+            logging.debug('[%s] infoLabelUpdate called', self.getName())
+            self.ui.infoLabel.setText(param['data'])
+            self.ui.connBtn.setText('Disconnect')
 
 if __name__ == '__main__':
     import sys
