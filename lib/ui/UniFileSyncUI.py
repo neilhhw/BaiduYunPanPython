@@ -28,8 +28,6 @@ class UniFileSyncUI(QMainWindow):
     def __init__(self, name=None):
         super(UniFileSyncUI, self).__init__()
 
-        self.confManager = ConfManager.getManager()
-
         self.ui = Ui_UniFileSyncPop()
         self.ui.setupUi(self)
 
@@ -50,19 +48,14 @@ class UniFileSyncUI(QMainWindow):
         self.trayIcon.show()
         self.showTrayIconMessage()
 
-        #setup list
-        self.setupFolderList(self.ui.folderList)
-        self.setupPluginList(self.ui.pluginList)
-
         #Init status bar
-        stBarConf = self.confManager.getValue('UI', 'statusbar')
+        stBarConf = ConfManager.getManager().getValue('UI', 'statusbar')
         self.statusbar.showMessage(stBarConf['messages']['init'])
 
         #connect the signal with slot
         self.connectUISlots(self.ui)
-
         #set UI label
-        username = self.confManager.getValue('UI', 'username')
+        username = ConfManager.getManager().getValue('UI', 'username')
         self.ui.nameLabel.setText(username)
 
         #Start server immediately
@@ -74,13 +67,17 @@ class UniFileSyncUI(QMainWindow):
         self.server.addCallBack(self.statusbarUpdate)
         self.server.addCallBack(self.infoLabelUpdate)
 
+        #setup list
+        self.setupFolderList(self.ui.folderList)
+        self.setupPluginList(self.ui.pluginList)
+
     def closeEvent(self, event):
         """override close event"""
         if self.trayIcon.isVisible():
             self.hide()
             event.ignore()
 
-        self.confManager.save()
+        ConfManager.getManager().save()
         logging.debug('[%s] is closed, window is hide, configuration is saved', self.getName())
 
     def createActions(self):
@@ -105,14 +102,14 @@ class UniFileSyncUI(QMainWindow):
 
     def showTrayIconMessage(self):
         """show tray icon message"""
-        conf = self.confManager.getValue('UI', 'trayicon')
+        conf = ConfManager.getManager().getValue('UI', 'trayicon')
         popup = conf['popup']
 
         self.trayIcon.showMessage(popup['title'], popup['message'])
 
     def setupFolderList(self, folderList):
         """setup folder list for showing"""
-        fts = self.confManager.getValue('common', 'folders')
+        fts = ConfManager.getManager().getValue('common', 'folders')
         i = 0
         for ft in fts:
             flistItem = QListWidgetItem(QIcon('icon/folder.png'), ft, folderList)
@@ -121,7 +118,7 @@ class UniFileSyncUI(QMainWindow):
 
     def setupPluginList(self, pluginList):
         """setup plugin list from configuration file"""
-        fts = self.confManager.getValue('common', 'plugins')
+        fts = ConfManager.getManager().getValue('common', 'plugins')
         i = 0
         for ft in fts:
             flistItem = QListWidgetItem(QIcon('icon/plugin.png'), ft['name'], pluginList)
@@ -133,11 +130,11 @@ class UniFileSyncUI(QMainWindow):
         super(UniFileSyncUI, self).show()
 
         #Init status bar
-        stBarConf = self.confManager.getValue('UI', 'statusbar')
+        stBarConf = ConfManager.getManager().getValue('UI', 'statusbar')
         self.statusbar.showMessage(stBarConf['messages']['init'])
 
         #set UI label
-        username = self.confManager.getValue('UI', 'username')
+        username = ConfManager.getManager().getValue('UI', 'username')
         self.ui.nameLabel.setText(username)
 
     def connectUISlots(self, ui):
@@ -167,11 +164,19 @@ class UniFileSyncUI(QMainWindow):
             folderPath = fileDialog.getExistingDirectory()
             if folderPath != "":
                 listItem = QListWidgetItem(QIcon('icon/folder.png'), folderPath, self.ui.folderList)
+                logging.debug('[%s]: add folder path %s', self.getName(), folderPath)
                 self.ui.folderList.insertItem(self.ui.folderList.count(), listItem)
+                folderList = ConfManager.getManager().getValue('common', 'folders')
+                folderList.append(str(folderPath))
+                ConfManager.getManager().setValue('common', 'folders', folderList)
         elif btn is self.ui.rmFolderBtn:
             row = self.ui.folderList.currentRow()
+            item = self.ui.folderList.currentItem()
             self.ui.folderList.takeItem(row)
-            logging.debug('[%s]: remove item %d', self.getName(), row)
+            folderList = ConfManager.getManager().getValue('common', 'folders')
+            folderList.remove(str(item.text()))
+            ConfManager.getManager().setValue('common', 'folders', folderList)
+            logging.debug('[%s]: remove item %d %s', self.getName(), row, item.text())
 
     def createStatusBar(self):
         """create status bar"""

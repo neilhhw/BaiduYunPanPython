@@ -1,31 +1,26 @@
 - folders:
   - My Document
   - test
-  - !!python/unicode 'D:\MyCode\UniFileSync\lib\ui\icon'
   name: common
   network:
     password: 5791Abcd
+    port: 8089
     proxy: 10.144.1.10:8080
     user: hhou
-    port: 8089
   plugins:
-  - name: BaiduPlugin
-    path: plugins/baidu
-  - name: KingPan
-    path: plugins/kingsoft
-
+  - name: Baidu
+    path: D:\MyCode\UniFileSync\plugins\Baidu\BaiduPlugin.py
 - name: UI
   statusbar:
     messages:
-      init: Please connect to UniFileSync Server
       connected: UniFileSync Server is connected
+      init: Please connect to UniFileSync Server
+  trayicon:
+    popup:
+      message: Please configure your UniFileSync
+      title: UniFileSyncUI is starting
   username: Neil Howie
   window:
   - size:
       hight: 600
       width: 800
-  trayicon:
-      popup:
-          title: UniFileSyncUI is starting
-          message: Please configure your UniFileSync
-

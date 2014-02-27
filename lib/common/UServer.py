@@ -44,6 +44,8 @@ class UServer(UActor):
 
         self.isEnableSocket = False
 
+        self.configure()
+
 
     def addCallBack(self, callback):
         """add call back function for UServer"""
@@ -68,7 +70,6 @@ class UServer(UActor):
         if name == 'all' or name == '':
             if self.cActor.isRunning or self.fsMonitor.isRunning:
                 return E_ACTOR_ALIVE, None
-            self.configure()
             self.cActor.start()
             self.__startActors.append(self.cActor)
             self.fsMonitor.start()

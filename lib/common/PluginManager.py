@@ -55,6 +55,8 @@ class PluginManager(object):
     def loadAllPlugins(self):
         """load all plugins from destant path"""
         p_paths = ConfManager.getManager().getPluginPaths()
+        pluginList = ConfManager.getManager().getValue('common', 'plugins')
+
         for p in p_paths:
             logging.debug('loadAllPlugins from %s', p)
             #TODO: __import__ the module into our script
@@ -66,8 +68,17 @@ class PluginManager(object):
                         module_name = 'UniFileSync.plugins.%s' % d
                         module_path = '%s%s%sPlugin.py' % (tmp, os.sep, d)
                         imp.load_source('', module_path)
+                        pl = {'name': d, 'path': module_path}
+                        if pl not in pluginList:
+                            pluginList.append(pl)
+
             except OSError as exc:
                 logging.error('loadAllPlugins listdir error %d', OSError.errno)
+
+        ConfManager.getManager().setValue('common', 'plugins', pluginList)
+        logging.debug('[%s]: loadAllPlugins save %s into configuration', 'PluginManager', pluginList)
+        ConfManager.getManager().save()
+
 
     def unloadAllPlugins(self):
         """unload all plugins"""

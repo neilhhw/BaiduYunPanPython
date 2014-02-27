@@ -39,6 +39,7 @@ class ConfManager(object):
             super(ConfManager, ConfManager).__init__(ConfManager.__instance)
             ConfManager.__confFile = open(ConfManager.confFile, 'r')
             ConfManager.__confContent = ConfManager.__confFile.read()
+            ConfManager.__confFile.close()
             ConfManager.__instance.mkdir(ConfManager.userPluginPath)
             ConfManager.__instance.mkdir(ConfManager.userConfPath)
             ConfManager.__instance.mkdir(ConfManager.userLogPath)
@@ -56,13 +57,29 @@ class ConfManager(object):
         """set value to current key"""
         #print section, key, value, self.__confContent
         x = yaml.load(self.__confContent)
+        isModify = False
 
         for content in x:
             if content['name'] == section:
                 content[key] = value
+                isModify = True
 
-        self.__confContent = yaml.dump(x, default_flow_style=False)
+        if isModify:
+            self.__confContent = yaml.dump(x, default_flow_style=False)
         #print self.__confContent
+
+    def rmItem(self, section, key):
+        """remove item in current section"""
+        x = yaml.load(self.__confContent)
+        isModify = False
+
+        for c in x:
+            if key in c and c['name'] == section:
+                del c[key]
+                isModify = True
+
+        if isModify:
+            self.__confContent = yaml.dump(x, default_flow_style=False)
 
     def getScriptHome(self):
         """get scrip path"""
@@ -91,7 +108,6 @@ class ConfManager(object):
 
     def save(self):
         """save configuration into file"""
-        self.__confFile.close()
         self.__confFile = open(self.confFile, 'w')
         self.__confFile.write(self.__confContent)
         self.__confFile.close()
