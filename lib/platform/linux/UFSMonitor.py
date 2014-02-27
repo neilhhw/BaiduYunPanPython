@@ -63,6 +63,12 @@ class LinuxFileSysMonitor(UFSMonitor):
             mask = self.defaultMask
         self.wm.add_watch(path, mask, auto_add=True, rec=True)
 
+    def rmWatch(self, path):
+        """Remove watch for path"""
+        super(LinuxFileSysMonitor, self).rmWatch(path)
+        wd = self.wm.get_wd(path)
+        self.wm.rm_watch(wd, rec=True)
+
     def run(self):
         """Thread entry"""
         super(LinuxFileSysMonitor, self).run()

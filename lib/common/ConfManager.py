@@ -28,7 +28,9 @@ class ConfManager(object):
 
     confPath   = '%s%s%s' % (scriptHome, os.sep, 'conf')
     confName   = 'UniFileSync.yaml'
-    confFile   = confPath + os.sep + confName
+
+    confFile = confPath + os.sep + confName
+    userConfFile   = userConfPath + os.sep + confName
 
     @staticmethod
     def getManager():
@@ -37,14 +39,24 @@ class ConfManager(object):
         if not ConfManager.__instance:
             ConfManager.__instance = super(ConfManager, ConfManager).__new__(ConfManager)
             super(ConfManager, ConfManager).__init__(ConfManager.__instance)
-            ConfManager.__confFile = open(ConfManager.confFile, 'r')
-            ConfManager.__confContent = ConfManager.__confFile.read()
-            ConfManager.__confFile.close()
             ConfManager.__instance.mkdir(ConfManager.userPluginPath)
             ConfManager.__instance.mkdir(ConfManager.userConfPath)
             ConfManager.__instance.mkdir(ConfManager.userLogPath)
+            ConfManager.readConf()
         ConfManager.__lock.release()
         return ConfManager.__instance
+
+    @staticmethod
+    def readConf():
+        """read configuration from either system or user defined"""
+        if not os.path.exists(ConfManager.userConfFile):
+            f = open(ConfManager.confFile, 'r')
+            ConfManager.__confContent = f.read()
+            f.close()
+        else:
+            f = open(ConfManager.userConfFile, 'r')
+            ConfManager.__confContent = f.read()
+            f.close()
 
     def getValue(self, section, key):
         """get config value from key"""
@@ -108,7 +120,7 @@ class ConfManager(object):
 
     def save(self):
         """save configuration into file"""
-        self.__confFile = open(self.confFile, 'w')
+        self.__confFile = open(self.userConfFile, 'w')
         self.__confFile.write(self.__confContent)
         self.__confFile.close()
 

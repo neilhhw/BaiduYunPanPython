@@ -173,25 +173,27 @@ class UniFileSyncUI(QMainWindow):
             folderPath = fileDialog.getExistingDirectory()
             if folderPath != "":
                 listItem = QListWidgetItem(QIcon('icon/folder.png'), folderPath, self.ui.folderList)
-                logging.debug('[%s]: add folder path %s', self.getName(), folderPath)
+                logging.debug('[%s]: add folder path %s', self.getName(), str(folderPath))
                 self.ui.folderList.insertItem(self.ui.folderList.count(), listItem)
                 folderList = ConfManager.getManager().getValue('common', 'folders')
                 folderList.append(str(folderPath))
                 ConfManager.getManager().setValue('common', 'folders', folderList)
                 #send watch dir request
-                msg =  self.server.initMsg('watch', None, MSG_UNIQUE_ID_T_CONTROLLER, True, {'path': str(folderPath)})
+                msg =  self.server.initMsg('watch', None, MSG_UNIQUE_ID_T_CONTROLLER, True, {'path': str(folderPath), 'action': 'add'})
                 UMsgBus.getBus().send(msg)
                 self.statusbar.showMessage('Adding watch path %s' % folderPath)
 
         elif btn is self.ui.rmFolderBtn:
             row = self.ui.folderList.currentRow()
             item = self.ui.folderList.currentItem()
-            self.ui.folderList.takeItem(row)
             folderList = ConfManager.getManager().getValue('common', 'folders')
+            self.statusbar.showMessage('Removing watch path %s' % item.text())
             folderList.remove(str(item.text()))
             ConfManager.getManager().setValue('common', 'folders', folderList)
             logging.debug('[%s]: remove item %d %s', self.getName(), row, item.text())
-            self.statusbar.showMessage('Removing watch path %s' % folderPath)
+            msg =  self.server.initMsg('watch', None, MSG_UNIQUE_ID_T_CONTROLLER, True, {'path': str(item.text()), 'action': 'rm'})
+            UMsgBus.getBus().send(msg)
+            self.ui.folderList.takeItem(row)
 
     def createStatusBar(self):
         """create status bar"""

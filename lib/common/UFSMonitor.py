@@ -45,22 +45,32 @@ class UFSMonitor(UActor):
 
     def handleOper(self, msg):
         """handle file operation"""
+        res = E_OK
+
+        #TODO: add/rm watch return should update
         if msg.header.mid == MSG_ID_T_OPER_STOP:
             if msg.header.ack:
                 self.replyResult(msg, E_OK)
             self.stop()
         elif msg.header.mid == MSG_ID_T_OPER_ADD_WATCH:
-            if 'mask' not in msg.body:
-                self.addWatch(msg.body['path'])
-            else:
-                self.addWatch(msg.body['path'], msg.body['mask'])
+            if msg.body['action'] == 'add':
+                if 'mask' not in msg.body:
+                    self.addWatch(msg.body['path'])
+                else:
+                    self.addWatch(msg.body['path'], msg.body['mask'])
+            elif msg.body['action'] == 'rm':
+                self.rmWatch(msg.body['path'])
 
             if msg.header.ack:
-                self.replyResult(msg, E_OK)
+                self.replyResult(msg, res)
 
     def addWatch(self, path, mask=0):
         """add watch path"""
         logging.debug('[%s]: add watch path %s mask %d', self.getName(), path, mask)
+
+    def rmWatch(self, path):
+        """remove watch path"""
+        logging.debug('[%s]: remove watch path %s', self.getName(), path)
 
     def notify(self, action, watch_dir, path, src_path=''):
         """notify to others who cares about files change"""

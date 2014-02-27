@@ -266,8 +266,11 @@ class UServer(UActor):
         PluginManager.getManager().loadAllPlugins()
         confManager = ConfManager.getManager()
         proxy = confManager.getValue('common', 'network')
-        param = {'http': 'http://%s' % proxy['proxy'], 'https': 'https://%s' % proxy['proxy'] }
-        set_proxy(param)
+
+        if proxy['proxy'] != "" or proxy['proxy'] != None:
+            param = {'http': 'http://%s' % proxy['proxy'], 'https': 'https://%s' % proxy['proxy'] }
+            set_proxy(param)
+            logging.debug('[%s]: set proxy server %s', self.getName(), proxy['proxy'])
 
 if __name__ == '__main__':
     us = UServer()

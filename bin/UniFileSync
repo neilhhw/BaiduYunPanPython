@@ -1,2 +1,5 @@
-#!/bin/bash
+#!/bin/sh
 
+cd ../lib/ui
+python UniFileSyncUI.py
+cd ../../bin
