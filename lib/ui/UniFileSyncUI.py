@@ -45,13 +45,6 @@ class UniFileSyncUI(QMainWindow):
 
         qApp.setQuitOnLastWindowClosed(False)
 
-        self.trayIcon.show()
-        self.showTrayIconMessage()
-
-        #Init status bar
-        stBarConf = ConfManager.getManager().getValue('UI', 'statusbar')
-        self.statusbar.showMessage(stBarConf['messages']['init'])
-
         #connect the signal with slot
         self.connectUISlots(self.ui)
         #set UI label
@@ -70,6 +63,22 @@ class UniFileSyncUI(QMainWindow):
         #setup list
         self.setupFolderList(self.ui.folderList)
         self.setupPluginList(self.ui.pluginList)
+        self.setupNetworkConf()
+
+        #Init status bar
+        stBarConf = ConfManager.getManager().getValue('UI', 'statusbar')
+        self.statusbar.showMessage(stBarConf['messages']['init'])
+
+        #Init system icon
+        self.trayIcon.show()
+        self.showTrayIconMessage()
+
+
+    def setupNetworkConf(self):
+        """setup network configuration into UI"""
+        conf = ConfManager.getManager().getValue('common', 'network')
+        self.ui.serverLineEdit.setText(conf['proxy'])
+        self.ui.portLineEdit.setText("%s" % conf['port'])
 
     def closeEvent(self, event):
         """override close event"""
@@ -169,6 +178,11 @@ class UniFileSyncUI(QMainWindow):
                 folderList = ConfManager.getManager().getValue('common', 'folders')
                 folderList.append(str(folderPath))
                 ConfManager.getManager().setValue('common', 'folders', folderList)
+                #send watch dir request
+                msg =  self.server.initMsg('watch', None, MSG_UNIQUE_ID_T_CONTROLLER, True, {'path': str(folderPath)})
+                UMsgBus.getBus().send(msg)
+                self.statusbar.showMessage('Adding watch path %s' % folderPath)
+
         elif btn is self.ui.rmFolderBtn:
             row = self.ui.folderList.currentRow()
             item = self.ui.folderList.currentItem()
@@ -177,6 +191,7 @@ class UniFileSyncUI(QMainWindow):
             folderList.remove(str(item.text()))
             ConfManager.getManager().setValue('common', 'folders', folderList)
             logging.debug('[%s]: remove item %d %s', self.getName(), row, item.text())
+            self.statusbar.showMessage('Removing watch path %s' % folderPath)
 
     def createStatusBar(self):
         """create status bar"""
