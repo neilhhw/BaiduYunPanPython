@@ -267,7 +267,7 @@ class UServer(UActor):
         confManager = ConfManager.getManager()
         proxy = confManager.getValue('common', 'network')
 
-        if proxy['proxy'] != "" or proxy['proxy'] != None:
+        if proxy['proxy'] != "" and proxy['proxy'] != None:
             param = {'http': 'http://%s' % proxy['proxy'], 'https': 'https://%s' % proxy['proxy'] }
             set_proxy(param)
             logging.debug('[%s]: set proxy server %s', self.getName(), proxy['proxy'])

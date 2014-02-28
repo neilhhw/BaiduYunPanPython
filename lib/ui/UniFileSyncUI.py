@@ -77,7 +77,7 @@ class UniFileSyncUI(QMainWindow):
     def setupNetworkConf(self):
         """setup network configuration into UI"""
         conf = ConfManager.getManager().getValue('common', 'network')
-        self.ui.serverLineEdit.setText(conf['proxy'])
+        self.ui.proxyLineEdit.setText(conf['proxy'])
         self.ui.portLineEdit.setText("%s" % conf['port'])
 
     def closeEvent(self, event):
@@ -151,6 +151,9 @@ class UniFileSyncUI(QMainWindow):
         ui.connBtn.clicked.connect(lambda : self.connBtnSlots(ui.connBtn))
         ui.addFolderBtn.clicked.connect(lambda: self.connBtnSlots(ui.addFolderBtn))
         ui.rmFolderBtn.clicked.connect(lambda: self.connBtnSlots(ui.rmFolderBtn))
+        ui.saveBtn.clicked.connect(lambda: self.connBtnSlots(ui.saveBtn))
+
+        self.statusbar.connect(self.statusbar, SIGNAL('statusbarUpdate'), self.statusbar.showMessage)
 
     def connBtnSlots(self, btn):
         """docstring for connBtnSlots"""
@@ -195,6 +198,23 @@ class UniFileSyncUI(QMainWindow):
             UMsgBus.getBus().send(msg)
             self.ui.folderList.takeItem(row)
 
+        elif btn is self.ui.saveBtn:
+            proxyConf = ConfManager.getManager().getValue('common', 'network')
+            server = str(self.ui.proxyLineEdit.text())
+            user = str(self.ui.proxyNameLineEdit.text())
+            password = str(self.ui.proxyPwdLineEdit.text())
+            logging.debug('[%s]: save server=>%s user=>%s password=>%s into configuration',
+                          self.getName(), server, user, password)
+            proxyConf['proxy'] = server
+            proxyConf['user'] = user
+            proxyConf['password'] = password
+            ConfManager.getManager().setValue('common', 'network', proxyConf)
+            msg =  self.server.initMsg('proxy', None, MSG_UNIQUE_ID_T_CONTROLLER, True,
+                        {'http': 'http://%s' % server, 'https': 'https://%s' % server})
+            UMsgBus.getBus().send(msg)
+            self.statusbar.showMessage('Applying proxy %s' % server)
+
+
     def createStatusBar(self):
         """create status bar"""
 
@@ -212,6 +232,7 @@ class UniFileSyncUI(QMainWindow):
     def statusbarUpdate(self, param):
         """statusbar update callback"""
         logging.debug('[%s] statusbarUpdate called', self.getName())
+        #self.emit(SIGNAL('statusUpdate'), ERR_STR_TABLE[param['result']])
         self.statusbar.showMessage(ERR_STR_TABLE[param['result']])
 
     def infoLabelUpdate(self, param):

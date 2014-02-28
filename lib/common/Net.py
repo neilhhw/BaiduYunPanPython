@@ -32,15 +32,30 @@ def register_openers():
 def set_proxy(proxies, **kargs):
     """set proxy for global usage"""
     #TODO: Add user name, passsword in the future
-    proxyHandler = urllib2.ProxyHandler(proxies)
     __lock.acquire()
+
+    proxyHandler = urllib2.ProxyHandler(proxies)
+
+    for h in __handlers:
+        if type(h) == urllib2.ProxyHandler:
+            __handlers.remove(h)
+        elif type(h) == urllib2.ProxyBasicAuthHandler:
+            __handlers.remove(h)
+
+    if 'username' in kargs and 'password' in kargs:
+        authHandler = urllib2.ProxyBasicAuthHandler()
+        authHandler.add_password('realm', 'host', kargs['username'], kargs['password'])
+        __handlers.append(authHandler)
+
     __handlers.append(proxyHandler)
     __lock.release()
+
     return register_openers()
 
 def cloud_get(url, param):
     """common cloud get method"""
     full_url = url + '?' + urllib.urlencode(param)
+    #logging.debug('[Net]: cloud_get from %s', full_url)
     response = urllib2.urlopen(full_url)
     return response
 

@@ -61,7 +61,7 @@
     </sizepolicy>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>2</number>
    </property>
    <widget class="QWidget" name="folderTab">
     <attribute name="title">
@@ -181,6 +181,9 @@
         <height>20</height>
        </rect>
       </property>
+      <property name="echoMode">
+       <enum>QLineEdit::Password</enum>
+      </property>
      </widget>
      <widget class="QLineEdit" name="proxyNameLineEdit">
       <property name="geometry">
@@ -192,7 +195,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QLabel" name="serverLabel">
+     <widget class="QLabel" name="proxyLabel">
       <property name="geometry">
        <rect>
         <x>20</x>
@@ -218,7 +221,7 @@
        <string>User Name</string>
       </property>
      </widget>
-     <widget class="QLineEdit" name="serverLineEdit">
+     <widget class="QLineEdit" name="proxyLineEdit">
       <property name="geometry">
        <rect>
         <x>110</x>
@@ -277,12 +280,20 @@
        <string>Port</string>
       </property>
      </widget>
+     <widget class="QCheckBox" name="serverEnableCheckBox">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>60</y>
+        <width>70</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Enable</string>
+      </property>
+     </widget>
     </widget>
-   </widget>
-   <widget class="QWidget" name="confTab">
-    <attribute name="title">
-     <string>Configuration</string>
-    </attribute>
    </widget>
    <widget class="QWidget" name="pluginTab">
     <attribute name="title">
@@ -352,6 +363,10 @@
     <string>Cloud Disk info label</string>
    </property>
   </widget>
+  <zorder>nameLabel</zorder>
+  <zorder>connBtn</zorder>
+  <zorder>infoLabel</zorder>
+  <zorder>mainTabWidget</zorder>
  </widget>
  <resources/>
  <connections/>

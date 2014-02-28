@@ -123,7 +123,6 @@ class BaiduCloudAPI(ClouldAPI):
         data = "getCloudInfo failure"
 
         try:
-            print url
             f = cloud_get(url, param)
             data = json.load(f)
             res = E_OK
