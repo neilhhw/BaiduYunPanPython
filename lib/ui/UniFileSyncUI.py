@@ -247,7 +247,7 @@ class UniFileSyncUI(QMainWindow):
         """statusbar update callback"""
         logging.debug('[%s] statusbarUpdate called', self.getName())
         #self.emit(SIGNAL('statusUpdate'), ERR_STR_TABLE[param['result']])
-        self.statusbar.showMessage(ERR_STR_TABLE[param['result']])
+        #self.statusbar.showMessage(ERR_STR_TABLE[param['result']])
 
     def infoLabelUpdate(self, param):
         """infoLabelUpdate"""

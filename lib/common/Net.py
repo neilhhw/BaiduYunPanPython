@@ -37,9 +37,11 @@ def set_proxy(proxies, **kargs):
     proxyHandler = urllib2.ProxyHandler(proxies)
 
     for h in __handlers:
-        if type(h) == urllib2.ProxyHandler:
+        if isinstance(h, urllib2.ProxyHandler):
+            #logging.debug('[Net]: find previous proxy handler, remove it')
             __handlers.remove(h)
-        elif type(h) == urllib2.ProxyBasicAuthHandler:
+        elif isinstance(h, urllib2.ProxyBasicAuthHandler):
+            #logging.debug('[Net]: find previous proxy auth handler, remove it')
             __handlers.remove(h)
 
     if 'username' in kargs and 'password' in kargs:
