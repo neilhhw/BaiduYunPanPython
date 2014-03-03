@@ -147,6 +147,13 @@ class WinFileSysMonitor(UFSMonitor):
         self.comKey += 1
         self.__lock.release()
 
+    def rmWatch(self, path):
+        """remove watch path"""
+        super(WinFileSysMonitor, self).rmWatch(path)
+        for watch in self.watchList:
+            if watch['path'] == path:
+                self.watchList.remove(watch)
+
     def stop(self):
         """stop current actor"""
         super(WinFileSysMonitor, self).stop()
