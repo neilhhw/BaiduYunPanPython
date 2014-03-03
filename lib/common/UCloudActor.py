@@ -195,6 +195,6 @@ class UCloudActor(UActor):
 
         d = strIO.getvalue()
         strIO.close()
-        logging.debug('[%s]: parseResult\n%s', self.getName(), d)
+        logging.debug('[%s]: parseResult%s\n', self.getName(), d)
 
         return res, d

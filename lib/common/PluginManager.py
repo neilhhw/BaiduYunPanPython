@@ -36,10 +36,18 @@ class PluginManager(object):
         self.register(plugin)
         plugin.load()
 
-    def reload(self, plugin):
-        """reload plugin"""
-        plugin.unload()
-        plugin.load()
+    def reload(self, name):
+        """reload plugin with name"""
+        p = self.getPlugin(name)
+        if p:
+            p.unload()
+            p.load()
+
+    def unload(self, name):
+        """unload plugin with name"""
+        p = self.getPlugin(name)
+        if p:
+            p.unload()
 
     def getPlugin(self, name):
         """get plugin with name"""

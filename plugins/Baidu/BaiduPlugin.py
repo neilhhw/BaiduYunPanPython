@@ -316,6 +316,6 @@ class BaiduCloudAPI(ClouldAPI):
         error = {'http': e.code, 'code': edata['error_code']}
         self.errorHandler(error)
 
-baiduPlugin = BaiduPlugin('BaiduPlugin')
+baiduPlugin = BaiduPlugin('Baidu')
 baiduPlugin.active()
 #print baiduPlugin.getAPI().getCloudInfo()

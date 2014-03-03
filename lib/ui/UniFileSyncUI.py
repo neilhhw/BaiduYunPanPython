@@ -22,6 +22,7 @@ from UniFileSync.lib.common.LogManager import logging
 from UniFileSync.lib.common.MsgBus import *
 from UniFileSync.lib.common.Error import *
 from UniFileSync.lib.common.UServer import UServer
+from UniFileSync.lib.common.PluginManager import PluginManager
 
 class UniFileSyncUI(QMainWindow):
     """UniFileSyncUI class"""
@@ -152,6 +153,7 @@ class UniFileSyncUI(QMainWindow):
         ui.addFolderBtn.clicked.connect(lambda: self.connBtnSlots(ui.addFolderBtn))
         ui.rmFolderBtn.clicked.connect(lambda: self.connBtnSlots(ui.rmFolderBtn))
         ui.saveBtn.clicked.connect(lambda: self.connBtnSlots(ui.saveBtn))
+        ui.unloadBtn.clicked.connect(lambda: self.connBtnSlots(ui.unloadBtn))
 
         self.statusbar.connect(self.statusbar, SIGNAL('statusbarUpdate'), self.statusbar.showMessage)
 
@@ -201,18 +203,30 @@ class UniFileSyncUI(QMainWindow):
         elif btn is self.ui.saveBtn:
             proxyConf = ConfManager.getManager().getValue('common', 'network')
             server = str(self.ui.proxyLineEdit.text())
-            user = str(self.ui.proxyNameLineEdit.text())
-            password = str(self.ui.proxyPwdLineEdit.text())
-            logging.debug('[%s]: save server=>%s user=>%s password=>%s into configuration',
-                          self.getName(), server, user, password)
-            proxyConf['proxy'] = server
-            proxyConf['user'] = user
-            proxyConf['password'] = password
-            ConfManager.getManager().setValue('common', 'network', proxyConf)
-            msg =  self.server.initMsg('proxy', None, MSG_UNIQUE_ID_T_CONTROLLER, True,
-                        {'http': 'http://%s' % server, 'https': 'https://%s' % server})
-            UMsgBus.getBus().send(msg)
-            self.statusbar.showMessage('Applying proxy %s' % server)
+
+            if server != "" and server != None:
+                user = str(self.ui.proxyNameLineEdit.text())
+                password = str(self.ui.proxyPwdLineEdit.text())
+                logging.debug('[%s]: save server=>%s user=>%s password=>%s into configuration',
+                              self.getName(), server, user, password)
+                proxyConf['proxy'] = server
+                proxyConf['user'] = user
+                proxyConf['password'] = password
+                ConfManager.getManager().setValue('common', 'network', proxyConf)
+                msg =  self.server.initMsg('proxy', None, MSG_UNIQUE_ID_T_CONTROLLER, True,
+                            {'http': 'http://%s' % server, 'https': 'https://%s' % server})
+                UMsgBus.getBus().send(msg)
+                self.statusbar.showMessage('Applying proxy %s' % server)
+
+        elif btn is self.ui.unloadBtn:
+            row = self.ui.pluginList.currentRow()
+            it = str(self.ui.pluginList.currentItem().text())
+            logging.debug('[%s]: unload plugin name %s', self.getName(), it)
+            self.statusbar.showMessage('Unloading plugin %s' % it)
+            PluginManager.getManager().unload(it)
+            self.ui.pluginList.takeItem(row)
+            conf = ConfManager.getManager().getValue('common', 'plugins')
+
 
 
     def createStatusBar(self):
