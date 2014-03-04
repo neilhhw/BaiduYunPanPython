@@ -47,6 +47,7 @@ class PluginManager(object):
         """unload plugin with name"""
         p = self.getPlugin(name)
         if p:
+            self.__plugin_list.remove(p)
             p.unload()
 
     def getPlugin(self, name):
