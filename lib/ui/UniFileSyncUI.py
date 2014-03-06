@@ -154,6 +154,7 @@ class UniFileSyncUI(QMainWindow):
         ui.rmFolderBtn.clicked.connect(lambda: self.connBtnSlots(ui.rmFolderBtn))
         ui.saveBtn.clicked.connect(lambda: self.connBtnSlots(ui.saveBtn))
         ui.unloadBtn.clicked.connect(lambda: self.connBtnSlots(ui.unloadBtn))
+        ui.reloadBtn.clicked.connect(lambda: self.connBtnSlots(ui.reloadBtn))
 
         self.statusbar.connect(self.statusbar, SIGNAL('statusbarUpdate'), self.statusbar.showMessage)
 
@@ -226,8 +227,17 @@ class UniFileSyncUI(QMainWindow):
             PluginManager.getManager().unload(it)
             self.ui.pluginList.takeItem(row)
             conf = ConfManager.getManager().getValue('common', 'plugins')
+            for pc in conf:
+                if pc['name'] == it:
+                    conf.remove(pc)
+            ConfManager.getManager().setValue('common', 'plugins', conf)
 
-
+        elif btn is self.ui.reloadBtn:
+            row = self.ui.pluginList.currentRow()
+            it = str(self.ui.pluginList.currentItem().text())
+            logging.debug('[%s]: reload plugin name %s', self.getName(), it)
+            self.statusbar.showMessage('Reloading plugin %s' % it)
+            PluginManager.getManager().reload(it)
 
     def createStatusBar(self):
         """create status bar"""
