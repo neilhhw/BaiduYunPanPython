@@ -335,7 +335,7 @@
       <string>Reload</string>
      </property>
     </widget>
-    <widget class="QPushButton" name="addBtn">
+    <widget class="QPushButton" name="addPluginBtn">
      <property name="geometry">
       <rect>
        <x>400</x>

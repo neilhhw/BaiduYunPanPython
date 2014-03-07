@@ -61,6 +61,12 @@ class PluginManager(object):
         """get all loaded plugins"""
         return self.__plugin_list
 
+    def loadPluginFromPath(self, path):
+        """load plugin from special path"""
+        if os.path.isfile(path):
+            imp.load_source('', path)
+            logging.debug('[%s] Loading plugin from path %s', 'PluginManager', path)
+
     def loadAllPlugins(self):
         """load all plugins from destant path"""
         p_paths = ConfManager.getManager().getPluginPaths()

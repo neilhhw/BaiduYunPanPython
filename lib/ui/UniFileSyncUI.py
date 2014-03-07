@@ -58,7 +58,7 @@ class UniFileSyncUI(QMainWindow):
         msg = self.server.initMsg('start', None, MSG_UNIQUE_ID_T_CONTROLLER, False, {'name': 'all'})
         UMsgBus.getBus().send(msg)
 
-        self.server.addCallBack(self.statusbarUpdate)
+        self.server.addCallBack(self.statusupdate)
         self.server.addCallBack(self.infoLabelUpdate)
 
         #setup list
@@ -155,8 +155,10 @@ class UniFileSyncUI(QMainWindow):
         ui.saveBtn.clicked.connect(lambda: self.connBtnSlots(ui.saveBtn))
         ui.unloadBtn.clicked.connect(lambda: self.connBtnSlots(ui.unloadBtn))
         ui.reloadBtn.clicked.connect(lambda: self.connBtnSlots(ui.reloadBtn))
+        ui.resetBtn.clicked.connect(lambda: self.connBtnSlots(ui.resetBtn))
+        ui.addPluginBtn.clicked.connect(lambda: self.connBtnSlots(ui.addPluginBtn))
 
-        self.statusbar.connect(self.statusbar, SIGNAL('statusbarUpdate'), self.statusbar.showMessage)
+        self.connect(self, SIGNAL('statusupdate(int)'), self, SLOT('statusbarUpdate(int)'))
 
     def connBtnSlots(self, btn):
         """docstring for connBtnSlots"""
@@ -219,6 +221,21 @@ class UniFileSyncUI(QMainWindow):
                 UMsgBus.getBus().send(msg)
                 self.statusbar.showMessage('Applying proxy %s' % server)
 
+                ConfManager.getManager().save()
+
+        elif btn is self.ui.resetBtn:
+            proxyConf = ConfManager.getManager().getValue('common', 'network')
+            server = proxyConf['proxy']
+            user = proxyConf['user']
+            password = proxyConf['password']
+            port = proxyConf['port']
+
+            self.ui.proxyLineEdit.setText(server)
+            self.ui.proxyNameLineEdit.setText(user)
+            self.ui.proxyPwdLineEdit.setText(password)
+            self.ui.portLineEdit.setText(str(port))
+            self.ui.serverEnableCheckBox.setCheckState(0)
+
         elif btn is self.ui.unloadBtn:
             row = self.ui.pluginList.currentRow()
             it = str(self.ui.pluginList.currentItem().text())
@@ -239,6 +256,11 @@ class UniFileSyncUI(QMainWindow):
             self.statusbar.showMessage('Reloading plugin %s' % it)
             PluginManager.getManager().reload(it)
 
+        elif btn is self.ui.addPluginBtn:
+            path = QFileDialog.getOpenFileName(self)
+            PluginManager.getManager().loadPluginFromPath(str(path))
+
+
     def createStatusBar(self):
         """create status bar"""
 
@@ -253,11 +275,17 @@ class UniFileSyncUI(QMainWindow):
         """get server name"""
         return self.server.getName()
 
-    def statusbarUpdate(self, param):
+    def statusupdate(self, param):
+        """call back for status update"""
+        self.emit(SIGNAL('statusupdate(int)'), param['result'])
+        print 'Signal emit'
+
+    def statusbarUpdate(self, res):
         """statusbar update callback"""
-        logging.debug('[%s] statusbarUpdate called', self.getName())
+        #logging.debug('[%s] statusbarUpdate called', self.getName())
         #self.emit(SIGNAL('statusUpdate'), ERR_STR_TABLE[param['result']])
-        #self.statusbar.showMessage(ERR_STR_TABLE[param['result']])
+        print 'Are you here?'
+        self.statusbar.showMessage(ERR_STR_TABLE[res])
 
     def infoLabelUpdate(self, param):
         """infoLabelUpdate"""

@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'UniFileSyncPop.ui'
 #
-# Created: Fri Feb 28 09:51:52 2014
+# Created: Fri Mar 07 10:28:37 2014
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -120,16 +120,16 @@ class Ui_UniFileSyncPop(object):
         self.reloadBtn = QtGui.QPushButton(self.pluginTab)
         self.reloadBtn.setGeometry(QtCore.QRect(400, 180, 75, 23))
         self.reloadBtn.setObjectName(_fromUtf8("reloadBtn"))
-        self.addBtn = QtGui.QPushButton(self.pluginTab)
-        self.addBtn.setGeometry(QtCore.QRect(400, 50, 75, 23))
-        self.addBtn.setObjectName(_fromUtf8("addBtn"))
+        self.addPluginBtn = QtGui.QPushButton(self.pluginTab)
+        self.addPluginBtn.setGeometry(QtCore.QRect(400, 50, 75, 23))
+        self.addPluginBtn.setObjectName(_fromUtf8("addPluginBtn"))
         self.mainTabWidget.addTab(self.pluginTab, _fromUtf8(""))
         self.infoLabel = QtGui.QLabel(UniFileSyncPop)
         self.infoLabel.setGeometry(QtCore.QRect(290, 10, 221, 61))
         self.infoLabel.setObjectName(_fromUtf8("infoLabel"))
 
         self.retranslateUi(UniFileSyncPop)
-        self.mainTabWidget.setCurrentIndex(0)
+        self.mainTabWidget.setCurrentIndex(2)
         QtCore.QMetaObject.connectSlotsByName(UniFileSyncPop)
 
     def retranslateUi(self, UniFileSyncPop):
@@ -152,7 +152,7 @@ class Ui_UniFileSyncPop(object):
         self.mainTabWidget.setTabText(self.mainTabWidget.indexOf(self.NetTab), _translate("UniFileSyncPop", "Network", None))
         self.unloadBtn.setText(_translate("UniFileSyncPop", "Unload", None))
         self.reloadBtn.setText(_translate("UniFileSyncPop", "Reload", None))
-        self.addBtn.setText(_translate("UniFileSyncPop", "Add", None))
+        self.addPluginBtn.setText(_translate("UniFileSyncPop", "Add", None))
         self.mainTabWidget.setTabText(self.mainTabWidget.indexOf(self.pluginTab), _translate("UniFileSyncPop", "Plugins", None))
         self.infoLabel.setText(_translate("UniFileSyncPop", "Cloud Disk info label", None))
 
