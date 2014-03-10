@@ -193,9 +193,10 @@ class UServer(UActor):
         res = E_API_ERR
         data = "Cloud API Error"
         if rmsg:
-            res = rmsg.body['result']
-            data = rmsg.body['data']
-
+            if 'result' in rmsg.body:
+                res = rmsg.body['result']
+            if 'data' in rmsg.body:
+                data = rmsg.body['data']
         return res, data
 
 

@@ -59,7 +59,7 @@ class UniFileSyncUI(QMainWindow):
         UMsgBus.getBus().send(msg)
 
         self.server.addCallBack(self.statusupdate)
-        self.server.addCallBack(self.infoLabelUpdate)
+        self.server.addCallBack(self.cloudinfoupdate)
 
         #setup list
         self.setupFolderList(self.ui.folderList)
@@ -157,8 +157,10 @@ class UniFileSyncUI(QMainWindow):
         ui.reloadBtn.clicked.connect(lambda: self.connBtnSlots(ui.reloadBtn))
         ui.resetBtn.clicked.connect(lambda: self.connBtnSlots(ui.resetBtn))
         ui.addPluginBtn.clicked.connect(lambda: self.connBtnSlots(ui.addPluginBtn))
+        ui.syncFolderBtn.clicked.connect(lambda: self.connBtnSlots(ui.syncFolderBtn))
 
-        self.connect(self, SIGNAL('statusupdate(int)'), self, SLOT('statusbarUpdate(int)'))
+        self.connect(self, SIGNAL('statusupdate'), self.statusbarUpdate)
+        self.connect(self, SIGNAL('cloudinfoupdate'), self.infoLabelUpdate)
 
     def connBtnSlots(self, btn):
         """docstring for connBtnSlots"""
@@ -260,6 +262,9 @@ class UniFileSyncUI(QMainWindow):
             path = QFileDialog.getOpenFileName(self)
             PluginManager.getManager().loadPluginFromPath(str(path))
 
+        elif btn is self.ui.syncFolderBtn:
+            pass
+
 
     def createStatusBar(self):
         """create status bar"""
@@ -277,21 +282,20 @@ class UniFileSyncUI(QMainWindow):
 
     def statusupdate(self, param):
         """call back for status update"""
-        self.emit(SIGNAL('statusupdate(int)'), param['result'])
-        print 'Signal emit'
+        self.emit(SIGNAL('statusupdate'), param['result'])
 
     def statusbarUpdate(self, res):
         """statusbar update callback"""
-        #logging.debug('[%s] statusbarUpdate called', self.getName())
-        #self.emit(SIGNAL('statusUpdate'), ERR_STR_TABLE[param['result']])
-        print 'Are you here?'
         self.statusbar.showMessage(ERR_STR_TABLE[res])
 
-    def infoLabelUpdate(self, param):
+    def cloudinfoupdate(self, param):
+        """cloud infor update callback"""
+        self.emit(SIGNAL('cloudinfoupdate'), param['data'])
+
+    def infoLabelUpdate(self, res):
         """infoLabelUpdate"""
-        if param['data']:
-            logging.debug('[%s] infoLabelUpdate called', self.getName())
-            self.ui.infoLabel.setText(param['data'])
+        if res:
+            self.ui.infoLabel.setText(res)
             self.ui.connBtn.setText('Disconnect')
 
 if __name__ == '__main__':

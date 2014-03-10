@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'UniFileSyncPop.ui'
 #
-# Created: Fri Mar 07 10:28:37 2014
+# Created: Mon Mar 10 15:53:06 2014
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -65,6 +65,9 @@ class Ui_UniFileSyncPop(object):
         self.rmFolderBtn = QtGui.QPushButton(self.folderTab)
         self.rmFolderBtn.setGeometry(QtCore.QRect(430, 110, 75, 23))
         self.rmFolderBtn.setObjectName(_fromUtf8("rmFolderBtn"))
+        self.syncFolderBtn = QtGui.QPushButton(self.folderTab)
+        self.syncFolderBtn.setGeometry(QtCore.QRect(430, 180, 75, 23))
+        self.syncFolderBtn.setObjectName(_fromUtf8("syncFolderBtn"))
         self.mainTabWidget.addTab(self.folderTab, _fromUtf8(""))
         self.NetTab = QtGui.QWidget()
         self.NetTab.setObjectName(_fromUtf8("NetTab"))
@@ -129,7 +132,7 @@ class Ui_UniFileSyncPop(object):
         self.infoLabel.setObjectName(_fromUtf8("infoLabel"))
 
         self.retranslateUi(UniFileSyncPop)
-        self.mainTabWidget.setCurrentIndex(2)
+        self.mainTabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(UniFileSyncPop)
 
     def retranslateUi(self, UniFileSyncPop):
@@ -139,6 +142,7 @@ class Ui_UniFileSyncPop(object):
         self.folderList.setSortingEnabled(True)
         self.addFolderBtn.setText(_translate("UniFileSyncPop", "Add", None))
         self.rmFolderBtn.setText(_translate("UniFileSyncPop", "Remove", None))
+        self.syncFolderBtn.setText(_translate("UniFileSyncPop", "Sync", None))
         self.mainTabWidget.setTabText(self.mainTabWidget.indexOf(self.folderTab), _translate("UniFileSyncPop", "Folders", None))
         self.saveBtn.setText(_translate("UniFileSyncPop", "Save", None))
         self.resetBtn.setText(_translate("UniFileSyncPop", "Reset", None))

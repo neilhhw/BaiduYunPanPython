@@ -61,7 +61,7 @@
     </sizepolicy>
    </property>
    <property name="currentIndex">
-    <number>2</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="folderTab">
     <attribute name="title">
@@ -127,6 +127,19 @@
      </property>
      <property name="text">
       <string>Remove</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="syncFolderBtn">
+     <property name="geometry">
+      <rect>
+       <x>430</x>
+       <y>180</y>
+       <width>75</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Sync</string>
      </property>
     </widget>
    </widget>
