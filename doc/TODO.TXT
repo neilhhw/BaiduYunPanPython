@@ -3,3 +3,8 @@
 3. UI
 4. Configure Manager
 5. Folder change
+
+
+1. 处理Linux下零时文件的问题IOExec
+2. 添加同步处理。
+3. 添加过滤后缀。
