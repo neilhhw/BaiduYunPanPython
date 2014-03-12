@@ -59,10 +59,17 @@ class UCloudActor(UActor):
 
         res = E_API_ERR
         result = {}
+        dirpath = ""
 
         syncPath = msg.body['path']
+
         if msg.body['watch_dir'] == "":
             filePath = syncPath
+        else:
+            dirpath = self.getSyncFolder(msg.body['watch_dir'])
+            self.__mkdir(dirpath)
+            syncPath = dirpath + '/' + msg.body['path']
+
         filePath = msg.body['watch_dir'] + os.sep +msg.body['path']
 
         for p in self.pluginManager.getAllPlugins():
@@ -74,6 +81,8 @@ class UCloudActor(UActor):
         if msg.header.ack:
             self.replyResult(msg, res, data=d)
 
+        self.notify(msg, res, data=d)
+
     def handleFileDelete(self, msg):
         """docstring for handleFileDelete"""
         logging.debug('[%s]: handleFileDelete: %s, watch dir %s', self.getName(), msg.body['path'], msg.body['watch_dir'])
@@ -82,6 +91,10 @@ class UCloudActor(UActor):
         result = {}
 
         filePath = msg.body['path']
+        if msg.body['watch_dir'] != "":
+            dirpath = self.getSyncFolder(msg.body['watch_dir'])
+            self.__mkdir(dirpath)
+            filePath = dirpath + '/' + msg.body['path']
 
         for p in self.pluginManager.getAllPlugins():
             res = p.getAPI().deleteSingleFile(filePath)
@@ -92,16 +105,24 @@ class UCloudActor(UActor):
         if msg.header.ack:
             self.replyResult(msg, res, data=d)
 
+        self.notify(msg, res, data=d)
+
     def handleFileModify(self, msg):
         """docstring for handleFileModify"""
         logging.debug('[%s]: handleFileModify: %s, watch dir %s', self.getName(), msg.body['path'], msg.body['watch_dir'])
 
         res = E_API_ERR
         result = {}
+        dirpath = ""
 
         syncPath = msg.body['path']
         if msg.body['watch_dir'] == "":
             filePath = syncPath
+        else:
+            dirpath = self.getSyncFolder(msg.body['watch_dir'])
+            self.__mkdir(dirpath)
+            syncPath = dirpath + '/' + msg.body['path']
+
         filePath = msg.body['watch_dir'] + os.sep +msg.body['path']
 
         for p in self.pluginManager.getAllPlugins():
@@ -113,10 +134,21 @@ class UCloudActor(UActor):
         if msg.header.ack:
             self.replyResult(msg, res, data=d)
 
+        self.notify(msg, res, data=d)
+
     def handleFileMkdir(self, msg):
         """docstring for handleFileMkdir"""
         logging.debug('[%s]: handleFileMkdir: %s', self.getName(), msg.body['dir_path'])
         pass
+
+    def __mkdir(self, dirpath):
+        """mkdir in cloude"""
+        result = {}
+        if dirpath:
+            for p in self.pluginManager.getAllPlugins():
+                res = p.getAPI().mkdirInCloud(dirpath)
+                result[p.name] = [res]
+        return result
 
     def handleFileList(self, msg):
         """docstring for handleFileList"""
@@ -133,6 +165,8 @@ class UCloudActor(UActor):
 
         if msg.header.ack:
             self.replyResult(msg, res, data=d)
+
+        self.notify(msg, res, data=d)
 
     def handleFileSync(self, msg):
         """docstring for handleFileSync"""
@@ -155,6 +189,8 @@ class UCloudActor(UActor):
 
         if msg.header.ack:
             self.replyResult(msg, res, data=d)
+
+        self.notify(msg, res, data=d)
 
     def handleFileRename(self, msg):
         """docstring for handleFileRename"""
@@ -198,3 +234,23 @@ class UCloudActor(UActor):
         logging.debug('[%s]: parseResult%s\n', self.getName(), d)
 
         return res, d
+
+
+    def getSyncFolder(self, path):
+        """get sync folder from path"""
+        dirpath = path
+        try:
+            index = path.rindex(os.sep) + 1
+            dirpath = path[index:]
+        except ValueError, KeyError:
+            logging.error('[%s]: getSyncFolder failure with no so seperator', self.getName())
+
+        return dirpath
+
+    def notify(self, msg, res, data=None):
+        """notify all listeners"""
+        rmsg = self.initMsg(msg.header.mtype, msg.header.mid)
+        rmsg.body = {'result': res, 'data': data}
+
+        self.notifyListeners(rmsg)
+

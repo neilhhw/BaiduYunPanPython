@@ -29,7 +29,7 @@ class PluginManager(object):
     def register(self, plugin):
         """register plugin to manager"""
         self.__plugin_list.append(plugin)
-        logging.debug(plugin.name + ' registers to PluginManager')
+        logging.debug('[%s] registers to PluginManager', plugin.name)
 
     def loadPlugin(self, plugin):
         """active related plugin"""
@@ -73,7 +73,7 @@ class PluginManager(object):
         pluginList = ConfManager.getManager().getValue('common', 'plugins')
 
         for p in p_paths:
-            logging.debug('loadAllPlugins from %s', p)
+            logging.debug('[%s]: loadAllPlugins from %s', 'PluginManager', p)
             #TODO: __import__ the module into our script
             try:
                 dirs = os.listdir(p)
@@ -91,7 +91,7 @@ class PluginManager(object):
                 logging.error('loadAllPlugins listdir error %d', OSError.errno)
 
         ConfManager.getManager().setValue('common', 'plugins', pluginList)
-        logging.debug('[%s]: loadAllPlugins save %s into configuration', 'PluginManager', pluginList)
+        logging.debug('[%s]: loadAllPlugins and save %s into configuration', 'PluginManager', pluginList)
         ConfManager.getManager().save()
 
 

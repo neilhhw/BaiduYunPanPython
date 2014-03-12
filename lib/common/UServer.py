@@ -4,6 +4,7 @@ import socket
 import json
 import platform
 import Queue
+import time
 
 from UniFileSync.lib.common.MsgBus import *
 from UniFileSync.lib.common.UActor import UActor
@@ -26,7 +27,7 @@ class UServer(UActor):
         super(UServer, self).__init__(name)
         self.setMsgUid(MSG_UNIQUE_ID_T_CONTROLLER)
 
-        #self.addListener(MSG_UNIQUE_ID_T_CLOUD_ACTOR)
+        self.addListener(MSG_UNIQUE_ID_T_CLOUD_ACTOR)
 
         self.addHandler('start', self.startHandler)
         self.addHandler('stop', self.stopHandler)
@@ -66,6 +67,7 @@ class UServer(UActor):
             name = ''
         res = E_OK
 
+        watchpaths = ConfManager.getManager().getValue('common', 'folders')
 
         if name == 'all' or name == '':
             if self.cActor.isRunning or self.fsMonitor.isRunning:
@@ -74,11 +76,23 @@ class UServer(UActor):
             self.__startActors.append(self.cActor)
             self.fsMonitor.start()
             self.__startActors.append(self.fsMonitor)
+
+            time.sleep(2)
+            for w in watchpaths:
+                self.watchHandler({'path': w, 'action': 'add'}, False)
+                logging.debug('[%s]: add watch path %s from configuration file', self.getName(), w)
+
         elif name == 'monitor':
             if self.fsMonitor.isRunning:
                 return E_ACTOR_ALIVE, None
             self.fsMonitor.start()
             self.__startActors.append(self.fsMonitor)
+
+            time.sleep(2)
+            for w in watchpaths:
+                self.watchHandler({'path': w, 'action': 'add'})
+                logging.debug('[%s]: add watch path %s from configuration file', self.getName(), w)
+
         elif name == 'cloud':
             if self.cActor.isRunning:
                 return E_ACTOR_ALIVE, None
@@ -142,16 +156,21 @@ class UServer(UActor):
         res = set_proxy(param)
         return res, None
 
-    def watchHandler(self, param):
+    def watchHandler(self, param, ack=True):
         """watch handler for actors"""
         logging.debug('[%s]: watchHandler with parm %s', self.getName(), param);
-        msg = self.initMsg(MSG_TYPE_T_OPER, MSG_ID_T_OPER_ADD_WATCH, MSG_UNIQUE_ID_T_FS_MONITOR, True)
+        msg = self.initMsg(MSG_TYPE_T_OPER, MSG_ID_T_OPER_ADD_WATCH, MSG_UNIQUE_ID_T_FS_MONITOR, ack)
         msg.body = param
         self.msgBus.send(msg)
-        rmsg = self.getMsg(2)
-        res = E_WATCH_ERR
-        if rmsg:
-            res = rmsg.body['result']
+
+        if ack:
+            rmsg = self.getMsg(2)
+            res = E_WATCH_ERR
+            if rmsg:
+                res = rmsg.body['result']
+        else:
+            res = E_OK
+
         return res, None
 
     def listHandler(self, param):
@@ -242,6 +261,12 @@ class UServer(UActor):
             try:
                 msg = self.msgQueue.get(True)
                 if msg and msg.header.mtype:
+                    #This is msg sent by FSMonitor and get result from CloudActor
+                    if 'result' in msg.body:
+                        for c in self.__callbackList:
+                            c(msg.body)
+                        continue
+
                     res, data = self.getHandler(msg.header.mtype)(msg.body)
                     if msg.header.ack:
                         for c in self.__callbackList:
@@ -272,6 +297,7 @@ class UServer(UActor):
             param = {'http': 'http://%s' % proxy['proxy'], 'https': 'https://%s' % proxy['proxy'] }
             set_proxy(param)
             logging.debug('[%s]: set proxy server %s', self.getName(), proxy['proxy'])
+
 
 if __name__ == '__main__':
     us = UServer()

@@ -22,7 +22,7 @@ class Plugin(object):
     def active(self):
         """Make plugin active"""
         self.manager.loadPlugin(self)
-        logging.info(self.name + ' is active')
+        logging.info('[%s] is active', self.name)
         return True
 
     def getAPI(self):

@@ -19,3 +19,5 @@ formatter = logging.Formatter('%(asctime)s %(filename)s: %(levelname)-8s %(messa
 console.setFormatter(formatter)
 logging.getLogger('').addHandler(console)
 ################################################################################################
+
+logging.info('[UniFileSync] Start a new logging =========')

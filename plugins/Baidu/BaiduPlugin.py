@@ -307,6 +307,9 @@ class BaiduCloudAPI(ClouldAPI):
             elif error['code'] == 'expired_token':
                 #Token expired
                 pass
+            elif error['code'] == 31061:
+                #File exist already
+                pass
 
     def pcsErrorHandler(self, e):
         """pcs error handler"""

@@ -34,11 +34,11 @@ class UniFileSyncUI(QMainWindow):
 
         self.setFixedSize(self.size())
 
-        self.server = UServer()
+        self.server = UServer('UServer')
         self.server.regSelfToBus()
 
         if name:
-            self.server.setName(name)
+            self.setName(name)
 
         self.createActions()
         self.createTrayIcon()
@@ -263,8 +263,10 @@ class UniFileSyncUI(QMainWindow):
             PluginManager.getManager().loadPluginFromPath(str(path))
 
         elif btn is self.ui.syncFolderBtn:
-            pass
-
+            folder = str(self.ui.folderList.currentItem().text())
+            msg =  self.server.initMsg('sync', None, MSG_UNIQUE_ID_T_CONTROLLER, True, {'path': str(folderPath), 'action': 'add'})
+            UMsgBus.getBus().send(msg)
+            self.statusbar.showMessage('Sync %s with cloud' % folder)
 
     def createStatusBar(self):
         """create status bar"""
@@ -274,11 +276,11 @@ class UniFileSyncUI(QMainWindow):
 
     def setName(self, name):
         """set server name"""
-        self.server.setName(name)
+        self.name = name
 
     def getName(self):
         """get server name"""
-        return self.server.getName()
+        return self.name
 
     def statusupdate(self, param):
         """call back for status update"""
