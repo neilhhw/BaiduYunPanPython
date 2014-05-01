@@ -89,7 +89,7 @@ class BaiduCloudAPI(ClouldAPI):
         """Refresh access token"""
         super(BaiduCloudAPI, self).refreshToken()
         api_url = self.cf.get("BaiduCloud", "openapi_url") + "/token"
-        logging.debug('[BaiduPlugin]: refreshToken: URL=>% s', api_url)
+        logging.debug('[BaiduPlugin]: refreshToken: URL=>%s', api_url)
         param = {"grant_type": "refresh_token", "refresh_token": self.cf.get("BaiduCloud", "refresh_token"),
                  "client_id": self.cf.get("BaiduCloud", "api_key"),
                  "client_secret": self.cf.get("BaiduCloud", "secret_key")}

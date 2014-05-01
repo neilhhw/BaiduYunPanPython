@@ -66,7 +66,8 @@ class UFSMonitor(UActor):
 
     def addWatch(self, path, mask=0):
         """add watch path"""
-        logging.debug('[%s]: add watch path %s mask %d', self.getName(), path, mask)
+        #logging.debug('[%s]: add watch path %s mask %d', self.getName(), path, mask)
+        logging.debug('[%s]: add watch path', self.getName())
 
     def rmWatch(self, path):
         """remove watch path"""

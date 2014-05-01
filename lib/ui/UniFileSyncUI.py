@@ -183,13 +183,14 @@ class UniFileSyncUI(QMainWindow):
             folderPath = fileDialog.getExistingDirectory()
             if folderPath != "":
                 listItem = QListWidgetItem(QIcon('icon/folder.png'), folderPath, self.ui.folderList)
-                logging.debug('[%s]: add folder path %s', self.getName(), str(folderPath))
+                pyStr = '%s' % folderPath
+                logging.debug('[%s]: add folder path %s', self.getName(), pyStr)
                 self.ui.folderList.insertItem(self.ui.folderList.count(), listItem)
                 folderList = ConfManager.getManager().getValue('common', 'folders')
-                folderList.append(str(folderPath))
+                folderList.append(pyStr)
                 ConfManager.getManager().setValue('common', 'folders', folderList)
                 #send watch dir request
-                msg =  self.server.initMsg('watch', None, MSG_UNIQUE_ID_T_CONTROLLER, True, {'path': str(folderPath), 'action': 'add'})
+                msg =  self.server.initMsg('watch', None, MSG_UNIQUE_ID_T_CONTROLLER, True, {'path': pyStr, 'action': 'add'})
                 UMsgBus.getBus().send(msg)
                 self.statusbar.showMessage('Adding watch path %s' % folderPath)
 
@@ -198,10 +199,11 @@ class UniFileSyncUI(QMainWindow):
             item = self.ui.folderList.currentItem()
             folderList = ConfManager.getManager().getValue('common', 'folders')
             self.statusbar.showMessage('Removing watch path %s' % item.text())
-            folderList.remove(str(item.text()))
+            pyStr = '%s' % item.text()
+            folderList.remove(pyStr)
             ConfManager.getManager().setValue('common', 'folders', folderList)
             logging.debug('[%s]: remove item %d %s', self.getName(), row, item.text())
-            msg =  self.server.initMsg('watch', None, MSG_UNIQUE_ID_T_CONTROLLER, True, {'path': str(item.text()), 'action': 'rm'})
+            msg =  self.server.initMsg('watch', None, MSG_UNIQUE_ID_T_CONTROLLER, True, {'path': pyStr, 'action': 'rm'})
             UMsgBus.getBus().send(msg)
             self.ui.folderList.takeItem(row)
 

@@ -1,4 +1,5 @@
 #!/bin/sh
+export PYTHONPATH=~/Code:$PYTHONPATH
 
 cd ../lib/ui
 python UniFileSyncUI.py

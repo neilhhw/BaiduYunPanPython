@@ -58,9 +58,9 @@ class LinuxFileSysMonitor(UFSMonitor):
 
     def addWatch(self, path, mask=0):
         """Add watch for path"""
-        super(LinuxFileSysMonitor, self).addWatch(path, mask)
         if mask == 0:
             mask = self.defaultMask
+        super(LinuxFileSysMonitor, self).addWatch(path, mask)
         self.wm.add_watch(path, mask, auto_add=True, rec=True)
 
     def rmWatch(self, path):

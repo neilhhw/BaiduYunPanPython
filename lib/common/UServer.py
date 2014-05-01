@@ -80,7 +80,7 @@ class UServer(UActor):
             time.sleep(2)
             for w in watchpaths:
                 self.watchHandler({'path': w, 'action': 'add'}, False)
-                logging.debug('[%s]: add watch path %s from configuration file', self.getName(), w)
+                #logging.debug('[%s]: add watch path %s from configuration file', self.getName(), w)
 
         elif name == 'monitor':
             if self.fsMonitor.isRunning:
@@ -285,6 +285,7 @@ class UServer(UActor):
         PluginManager.getManager().unloadAllPlugins()
         if self.isEnableSocket:
             self.sock.close()
+        ConfManager.getManager().save()
 
     def configure(self):
         """server self configure when it is started"""

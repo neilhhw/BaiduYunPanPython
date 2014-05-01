@@ -192,6 +192,7 @@ class UCloudActor(UActor):
 
         self.notify(msg, res, data=d)
 
+    #TODO: need to change.
     def handleFileRename(self, msg):
         """docstring for handleFileRename"""
         logging.debug('[%s]: handleFileRename: %s=>%s', self.getName(), msg.body['src_path'], msg.body['path'])
@@ -231,7 +232,7 @@ class UCloudActor(UActor):
 
         d = strIO.getvalue()
         strIO.close()
-        logging.debug('[%s]: parseResult%s\n', self.getName(), d)
+        logging.debug("[%s]: parseResult %s\n", self.getName(), d.encode('utf-8'))
 
         return res, d
 
